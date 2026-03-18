@@ -4,7 +4,6 @@ import {
   FlatList,
   StyleSheet,
   RefreshControl,
-  Pressable,
 } from 'react-native';
 import {
   FAB,
@@ -17,7 +16,7 @@ import {
   ActivityIndicator,
 } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
-import { useMemoStore, useAuthStore } from '../stores';
+import { useMemoStore } from '../stores';
 import { useNetworkStore } from '../utils/network';
 import { fullSync } from '../sync';
 import { Memo } from '../types';
@@ -30,7 +29,9 @@ export function MemoListScreen() {
     memos,
     isLoading,
     searchQuery,
+    filterTag,
     setSearchQuery,
+    setFilterTag,
     loadMemos,
     getFilteredMemos,
     deleteMemo,
@@ -65,9 +66,11 @@ export function MemoListScreen() {
   const renderMemoItem = ({ item }: { item: Memo }) => (
     <MemoCard
       memo={item}
+      activeTag={filterTag}
       onPress={() => handleEditMemo(item)}
       onDelete={() => deleteMemo(item.id)}
       onTogglePin={() => togglePin(item.id)}
+      onTagPress={setFilterTag}
     />
   );
 
@@ -109,10 +112,12 @@ export function MemoListScreen() {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text variant="titleMedium" style={styles.emptyText}>
-              No memos yet
+              {searchQuery || filterTag ? 'No matching memos' : 'No memos yet'}
             </Text>
             <Text variant="bodyMedium" style={styles.emptySubtext}>
-              Tap + to create your first memo
+              {searchQuery || filterTag
+                ? 'Try clearing search or tag filters'
+                : 'Tap + to create your first memo'}
             </Text>
           </View>
         }
@@ -129,12 +134,14 @@ export function MemoListScreen() {
 
 interface MemoCardProps {
   memo: Memo;
+  activeTag: string | null;
   onPress: () => void;
   onDelete: () => void;
   onTogglePin: () => void;
+  onTagPress: (tag: string | null) => void;
 }
 
-function MemoCard({ memo, onPress, onDelete, onTogglePin }: MemoCardProps) {
+function MemoCard({ memo, activeTag, onPress, onDelete, onTogglePin, onTagPress }: MemoCardProps) {
   const theme = useTheme();
   
   // Extract tags from content
@@ -185,16 +192,24 @@ function MemoCard({ memo, onPress, onDelete, onTogglePin }: MemoCardProps) {
 
         {tags.length > 0 && (
           <View style={styles.tagsContainer}>
-            {tags.slice(0, 5).map((tag, index) => (
-              <Chip
-                key={index}
-                compact
-                style={styles.tag}
-                textStyle={styles.tagText}
-              >
-                {tag}
-              </Chip>
-            ))}
+            {tags.slice(0, 5).map((tag, index) => {
+              const tagName = tag.replace('#', '').toLowerCase();
+              const isActive = activeTag === tagName;
+
+              return (
+                <Chip
+                  key={index}
+                  compact
+                  selected={isActive}
+                  mode={isActive ? 'flat' : 'outlined'}
+                  style={styles.tag}
+                  textStyle={styles.tagText}
+                  onPress={() => onTagPress(isActive ? null : tagName)}
+                >
+                  {tag}
+                </Chip>
+              );
+            })}
           </View>
         )}
 

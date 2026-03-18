@@ -29,7 +29,7 @@
 - [x] Search interface
 - [x] Settings screen
 - [x] Sync status indicator
-- [ ] Tag filter/selector
+- [x] Tag filter/selector
 
 ## Phase 5: Features
 - [ ] Full-text search (local)
