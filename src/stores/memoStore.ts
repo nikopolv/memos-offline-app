@@ -195,12 +195,25 @@ export const useMemoStore = create<MemoState>((set, get) => ({
 
   getFilteredMemos: () => {
     const { memos, searchQuery, filterTag } = get();
-    
+
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    const searchTerms = normalizedQuery.length
+      ? normalizedQuery.split(/\s+/).filter(Boolean)
+      : [];
+
     return memos.filter((memo) => {
-      // Search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        if (!memo.content.toLowerCase().includes(query)) {
+      const content = memo.content.toLowerCase();
+
+      // Local full-text style search:
+      // - split query into terms
+      // - every term must match either a word prefix or substring
+      if (searchTerms.length > 0) {
+        const words = content.split(/\W+/).filter(Boolean);
+        const matchesAllTerms = searchTerms.every((term) => {
+          return words.some((word) => word.startsWith(term)) || content.includes(term);
+        });
+
+        if (!matchesAllTerms) {
           return false;
         }
       }

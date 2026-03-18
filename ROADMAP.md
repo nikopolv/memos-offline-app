@@ -32,7 +32,7 @@
 - [x] Tag filter/selector
 
 ## Phase 5: Features
-- [ ] Full-text search (local)
+- [x] Full-text search (local)
 - [ ] Pin/unpin memos
 - [ ] Dark/light theme
 - [ ] Pull-to-refresh
