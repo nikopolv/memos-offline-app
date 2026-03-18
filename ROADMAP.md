@@ -40,7 +40,7 @@
 - [ ] Share extension (Android/iOS)
 
 ## Phase 6: Polish & Deploy
-- [ ] Error handling & user feedback
+- [x] Error handling & user feedback
 - [ ] Loading states
 - [ ] Empty states
 - [ ] App icon & splash screen

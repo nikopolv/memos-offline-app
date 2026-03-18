@@ -14,6 +14,7 @@ import {
   Chip,
   useTheme,
   ActivityIndicator,
+  Snackbar,
 } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useMemoStore } from '../stores';
@@ -36,6 +37,8 @@ export function MemoListScreen() {
     getFilteredMemos,
     deleteMemo,
     togglePin,
+    error,
+    clearError,
   } = useMemoStore();
   const { isConnected } = useNetworkStore();
   const [refreshing, setRefreshing] = React.useState(false);
@@ -46,11 +49,14 @@ export function MemoListScreen() {
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    if (isConnected) {
-      await fullSync();
+    try {
+      if (isConnected) {
+        await fullSync();
+      }
+      await loadMemos();
+    } finally {
+      setRefreshing(false);
     }
-    await loadMemos();
-    setRefreshing(false);
   }, [isConnected, loadMemos]);
 
   const handleCreateMemo = () => {
@@ -128,6 +134,15 @@ export function MemoListScreen() {
         style={styles.fab}
         onPress={handleCreateMemo}
       />
+
+      <Snackbar
+        visible={Boolean(error)}
+        onDismiss={clearError}
+        duration={4000}
+        action={{ label: 'Dismiss', onPress: clearError }}
+      >
+        {error}
+      </Snackbar>
     </View>
   );
 }
