@@ -34,7 +34,7 @@
 ## Phase 5: Features
 - [x] Full-text search (local)
 - [ ] Pin/unpin memos
-- [ ] Dark/light theme
+- [x] Dark/light theme
 - [ ] Pull-to-refresh
 - [ ] Swipe actions (delete, pin)
 - [ ] Share extension (Android/iOS)

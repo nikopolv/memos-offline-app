@@ -2,22 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import {
   List,
-  Switch,
   Button,
   Text,
   Divider,
   useTheme,
-  Surface,
 } from 'react-native-paper';
-import { useAuthStore } from '../stores';
+import { useAuthStore, useThemeStore, ThemeMode } from '../stores';
 import { useNetworkStore } from '../utils/network';
 import { getSyncStatus, fullSync } from '../sync';
 
 export function SettingsScreen() {
   const theme = useTheme();
   const { serverUrl, logout } = useAuthStore();
+  const { mode, setMode } = useThemeStore();
   const { isConnected } = useNetworkStore();
-  
+
   const [syncStatus, setSyncStatus] = useState({
     pendingCount: 0,
     failedCount: 0,
@@ -67,6 +66,12 @@ export function SettingsScreen() {
         { text: 'Logout', style: 'destructive', onPress: logout },
       ]
     );
+  };
+
+  const modeDescription: Record<ThemeMode, string> = {
+    system: 'Follow system',
+    light: 'Light',
+    dark: 'Dark',
   };
 
   return (
@@ -130,6 +135,42 @@ export function SettingsScreen() {
       <Divider />
 
       <List.Section>
+        <List.Subheader>Appearance</List.Subheader>
+
+        <List.Item
+          title="Theme"
+          description={modeDescription[mode]}
+          left={(props) => <List.Icon {...props} icon="theme-light-dark" />}
+        />
+
+        <View style={styles.themeButtons}>
+          <Button
+            mode={mode === 'system' ? 'contained' : 'outlined'}
+            onPress={() => setMode('system')}
+            compact
+          >
+            System
+          </Button>
+          <Button
+            mode={mode === 'light' ? 'contained' : 'outlined'}
+            onPress={() => setMode('light')}
+            compact
+          >
+            Light
+          </Button>
+          <Button
+            mode={mode === 'dark' ? 'contained' : 'outlined'}
+            onPress={() => setMode('dark')}
+            compact
+          >
+            Dark
+          </Button>
+        </View>
+      </List.Section>
+
+      <Divider />
+
+      <List.Section>
         <List.Subheader>About</List.Subheader>
         
         <List.Item
@@ -169,5 +210,11 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     padding: 16,
+  },
+  themeButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
 });
