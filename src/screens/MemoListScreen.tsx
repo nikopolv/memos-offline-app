@@ -21,6 +21,7 @@ import { useMemoStore, useAuthStore } from '../stores';
 import { useNetworkStore } from '../utils/network';
 import { fullSync } from '../sync';
 import { Memo } from '../types';
+import { TagFilter } from '../components';
 
 export function MemoListScreen() {
   const theme = useTheme();
@@ -94,6 +95,8 @@ export function MemoListScreen() {
           </Text>
         </View>
       )}
+
+      <TagFilter />
 
       <FlatList
         data={filteredMemos}

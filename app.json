@@ -1,18 +1,19 @@
 {
   "expo": {
-    "name": "memos-offline-app-new",
-    "slug": "memos-offline-app-new",
+    "name": "Memos Offline",
+    "slug": "memos-offline-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.nikopolv.memosoffline"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,10 +22,15 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "package": "com.nikopolv.memosoffline"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "memos-offline-app"
+      }
     }
   }
 }
