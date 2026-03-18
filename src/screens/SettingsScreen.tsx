@@ -1,0 +1,173 @@
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import {
+  List,
+  Switch,
+  Button,
+  Text,
+  Divider,
+  useTheme,
+  Surface,
+} from 'react-native-paper';
+import { useAuthStore } from '../stores';
+import { useNetworkStore } from '../utils/network';
+import { getSyncStatus, fullSync } from '../sync';
+
+export function SettingsScreen() {
+  const theme = useTheme();
+  const { serverUrl, logout } = useAuthStore();
+  const { isConnected } = useNetworkStore();
+  
+  const [syncStatus, setSyncStatus] = useState({
+    pendingCount: 0,
+    failedCount: 0,
+  });
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  useEffect(() => {
+    loadSyncStatus();
+  }, []);
+
+  const loadSyncStatus = async () => {
+    const status = await getSyncStatus();
+    setSyncStatus({
+      pendingCount: status.pendingCount,
+      failedCount: status.failedCount,
+    });
+  };
+
+  const handleSync = async () => {
+    if (!isConnected) {
+      Alert.alert('Offline', 'Cannot sync while offline');
+      return;
+    }
+
+    setIsSyncing(true);
+    try {
+      const result = await fullSync();
+      if (result.success) {
+        Alert.alert('Sync Complete', `Synced ${result.synced} items`);
+      } else {
+        Alert.alert('Sync Partial', `Synced ${result.synced}, failed ${result.failed}`);
+      }
+      await loadSyncStatus();
+    } catch (error) {
+      Alert.alert('Sync Failed', error instanceof Error ? error.message : 'Unknown error');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to disconnect? Your local memos will be preserved.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Logout', style: 'destructive', onPress: logout },
+      ]
+    );
+  };
+
+  return (
+    <ScrollView style={styles.container}>
+      <List.Section>
+        <List.Subheader>Connection</List.Subheader>
+        
+        <List.Item
+          title="Server"
+          description={serverUrl || 'Not connected'}
+          left={(props) => <List.Icon {...props} icon="server" />}
+        />
+        
+        <List.Item
+          title="Status"
+          description={isConnected ? 'Online' : 'Offline'}
+          left={(props) => (
+            <List.Icon
+              {...props}
+              icon={isConnected ? 'wifi' : 'wifi-off'}
+              color={isConnected ? theme.colors.primary : theme.colors.error}
+            />
+          )}
+        />
+      </List.Section>
+
+      <Divider />
+
+      <List.Section>
+        <List.Subheader>Sync</List.Subheader>
+        
+        <List.Item
+          title="Pending Changes"
+          description={`${syncStatus.pendingCount} items waiting to sync`}
+          left={(props) => <List.Icon {...props} icon="cloud-upload" />}
+        />
+        
+        {syncStatus.failedCount > 0 && (
+          <List.Item
+            title="Failed Items"
+            description={`${syncStatus.failedCount} items failed to sync`}
+            left={(props) => (
+              <List.Icon {...props} icon="alert-circle" color={theme.colors.error} />
+            )}
+          />
+        )}
+        
+        <View style={styles.buttonContainer}>
+          <Button
+            mode="contained"
+            onPress={handleSync}
+            loading={isSyncing}
+            disabled={isSyncing || !isConnected}
+            icon="sync"
+          >
+            Sync Now
+          </Button>
+        </View>
+      </List.Section>
+
+      <Divider />
+
+      <List.Section>
+        <List.Subheader>About</List.Subheader>
+        
+        <List.Item
+          title="Version"
+          description="1.0.0"
+          left={(props) => <List.Icon {...props} icon="information" />}
+        />
+        
+        <List.Item
+          title="Memos"
+          description="Open-source note-taking app"
+          left={(props) => <List.Icon {...props} icon="notebook" />}
+        />
+      </List.Section>
+
+      <Divider />
+
+      <List.Section>
+        <View style={styles.buttonContainer}>
+          <Button
+            mode="outlined"
+            onPress={handleLogout}
+            icon="logout"
+            textColor={theme.colors.error}
+          >
+            Disconnect
+          </Button>
+        </View>
+      </List.Section>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  buttonContainer: {
+    padding: 16,
+  },
+});

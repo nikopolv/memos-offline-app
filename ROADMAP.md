@@ -6,30 +6,30 @@
 - [x] Create roadmap
 - [x] Set up Expo project with TypeScript
 - [x] Create folder structure
-- [ ] Configure ESLint + Prettier
+- [ ] Configure ESLint + Prettier (optional)
 
-## Phase 2: Core Infrastructure
-- [ ] SQLite database schema
-- [ ] Memos API client
-- [ ] Authentication flow (token-based)
-- [ ] Network state detection
-- [ ] Sync queue manager
+## Phase 2: Core Infrastructure ✅
+- [x] SQLite database schema
+- [x] Memos API client
+- [x] Authentication flow (token-based)
+- [x] Network state detection
+- [x] Sync queue manager
 
-## Phase 3: Data Layer
-- [ ] Memo CRUD operations (local)
-- [ ] Tag management
-- [ ] Conflict resolution strategy
-- [ ] Background sync implementation
-- [ ] Offline queue with retry logic
+## Phase 3: Data Layer ✅
+- [x] Memo CRUD operations (local)
+- [x] Tag management (via content parsing)
+- [x] Conflict resolution strategy
+- [x] Background sync implementation
+- [x] Offline queue with retry logic
 
-## Phase 4: UI Components
-- [ ] App navigation (bottom tabs)
-- [ ] Memo list view
-- [ ] Memo editor (Markdown)
+## Phase 4: UI Components ✅
+- [x] App navigation (bottom tabs)
+- [x] Memo list view
+- [x] Memo editor (Markdown)
+- [x] Search interface
+- [x] Settings screen
+- [x] Sync status indicator
 - [ ] Tag filter/selector
-- [ ] Search interface
-- [ ] Settings screen
-- [ ] Sync status indicator
 
 ## Phase 5: Features
 - [ ] Full-text search (local)
