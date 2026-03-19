@@ -43,7 +43,7 @@
 - [x] Error handling & user feedback
 - [x] Loading states
 - [x] Empty states
-- [ ] App icon & splash screen
+- [x] App icon & splash screen
 - [ ] Build for Android APK
 - [ ] Build for iOS (TestFlight)
 - [ ] macOS build (Catalyst)
