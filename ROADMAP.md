@@ -45,7 +45,7 @@
 - [x] Empty states
 - [x] App icon & splash screen
 - [x] Build for Android APK
-- [ ] Build for iOS (TestFlight)
+- [x] Build for iOS (TestFlight)
 - [ ] macOS build (Catalyst)
 
 ---

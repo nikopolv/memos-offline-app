@@ -9,7 +9,9 @@
     "web": "expo start --web",
     "lint": "eslint src App.tsx index.ts --ext .ts,.tsx",
     "format": "prettier --write .",
-    "build:android:apk": "eas build --platform android --profile preview"
+    "build:android:apk": "eas build --platform android --profile preview",
+    "build:ios:testflight": "eas build --platform ios --profile production",
+    "submit:ios:testflight": "eas submit --platform ios --profile production"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
