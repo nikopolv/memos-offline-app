@@ -42,22 +42,30 @@ export function MemoListScreen() {
   } = useMemoStore();
   const { isConnected } = useNetworkStore();
   const [refreshing, setRefreshing] = React.useState(false);
+  const [refreshError, setRefreshError] = React.useState<string | null>(null);
 
   useEffect(() => {
     loadMemos();
   }, []);
 
   const handleRefresh = useCallback(async () => {
+    if (refreshing) return;
+
     setRefreshing(true);
+    setRefreshError(null);
+
     try {
       if (isConnected) {
         await fullSync();
       }
       await loadMemos();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to refresh memos';
+      setRefreshError(message);
     } finally {
       setRefreshing(false);
     }
-  }, [isConnected, loadMemos]);
+  }, [isConnected, loadMemos, refreshing]);
 
   const handleCreateMemo = () => {
     navigation.navigate('Editor', { mode: 'create' });
@@ -142,6 +150,15 @@ export function MemoListScreen() {
         action={{ label: 'Dismiss', onPress: clearError }}
       >
         {error}
+      </Snackbar>
+
+      <Snackbar
+        visible={Boolean(refreshError)}
+        onDismiss={() => setRefreshError(null)}
+        duration={4000}
+        action={{ label: 'Dismiss', onPress: () => setRefreshError(null) }}
+      >
+        {refreshError}
       </Snackbar>
     </View>
   );

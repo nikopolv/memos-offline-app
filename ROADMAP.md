@@ -35,7 +35,7 @@
 - [x] Full-text search (local)
 - [x] Pin/unpin memos
 - [x] Dark/light theme
-- [ ] Pull-to-refresh
+- [x] Pull-to-refresh
 - [ ] Swipe actions (delete, pin)
 - [ ] Share extension (Android/iOS)
 
