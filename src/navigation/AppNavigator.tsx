@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
-import { NavigationContainer, LinkingOptions } from '@react-navigation/native';
+import { NavigationContainer, LinkingOptions, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useTheme } from 'react-native-paper';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import type { ShareIntent } from 'expo-share-intent';
 
 import { useAuthStore } from '../stores';
 import { useNetworkStore } from '../utils/network';
@@ -32,6 +33,13 @@ const linking: LinkingOptions<any> = {
       Editor: 'new',
     },
   },
+};
+
+const navigationRef = createNavigationContainerRef();
+
+type AppNavigatorProps = {
+  sharedIntent?: ShareIntent | null;
+  onSharedIntentConsumed?: () => void;
 };
 
 function MainTabs() {
@@ -66,7 +74,10 @@ function MainTabs() {
   );
 }
 
-export function AppNavigator() {
+export function AppNavigator({
+  sharedIntent = null,
+  onSharedIntentConsumed,
+}: AppNavigatorProps) {
   const theme = useTheme();
   const { isAuthenticated, isLoading, initialize } = useAuthStore();
   const { initialize: initNetwork } = useNetworkStore();
@@ -77,10 +88,33 @@ export function AppNavigator() {
       await initialize();
     }
     init();
-    
+
     const unsubscribeNetwork = initNetwork();
     return () => unsubscribeNetwork();
   }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated || !sharedIntent || !navigationRef.isReady()) {
+      return;
+    }
+
+    const sharedContent = [sharedIntent.text, sharedIntent.webUrl]
+      .filter((value): value is string => Boolean(value && value.trim()))
+      .join('\n')
+      .trim();
+
+    if (!sharedContent) {
+      onSharedIntentConsumed?.();
+      return;
+    }
+
+    (navigationRef as any).navigate('Editor', {
+      mode: 'create',
+      initialContent: sharedContent,
+    });
+
+    onSharedIntentConsumed?.();
+  }, [isAuthenticated, sharedIntent, onSharedIntentConsumed]);
 
   if (isLoading) {
     return (
@@ -91,7 +125,7 @@ export function AppNavigator() {
   }
 
   return (
-    <NavigationContainer linking={linking}>
+    <NavigationContainer linking={linking} ref={navigationRef}>
       <Stack.Navigator>
         {!isAuthenticated ? (
           <Stack.Screen

@@ -11,6 +11,7 @@ A cross-platform mobile app for [Memos](https://usememos.com) with full offline 
 - 🔍 **Search**: Local full-text search
 - 🌙 **Dark mode**: Follows system theme
 - 📌 **Pinned memos**: Quick access to important notes
+- 📤 **Native share target**: Share text/links from other apps directly into a new memo
 
 ## Tech Stack
 
@@ -26,8 +27,13 @@ A cross-platform mobile app for [Memos](https://usememos.com) with full offline 
 # Install dependencies
 npm install
 
-# Start development
+# Start development (Expo Go)
 npx expo start
+
+# Share-target testing requires a native dev client
+npx expo prebuild --clean
+npx expo run:android
+npx expo run:ios
 
 # Build Android APK (EAS)
 npm run build:android:apk
