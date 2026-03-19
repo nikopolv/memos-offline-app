@@ -44,6 +44,7 @@
 ## Phase 6: Polish & Deploy
 - [x] Error handling & user feedback
 - [x] Login URL normalization (auto-prepend https:// when missing)
+- [x] Login URL normalization hardening (strip repeated trailing slashes)
 - [x] Loading states
 - [x] Empty states
 - [x] TypeScript type-check script (`npm run typecheck`)
