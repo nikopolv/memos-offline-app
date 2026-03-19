@@ -45,6 +45,7 @@
 - [x] Error handling & user feedback
 - [x] Login URL normalization (auto-prepend https:// when missing)
 - [x] Login URL normalization hardening (strip repeated trailing slashes)
+- [x] Login credential normalization (trim token/url and guard empty values)
 - [x] Loading states
 - [x] Empty states
 - [x] TypeScript type-check script (`npm run typecheck`)

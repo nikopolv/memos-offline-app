@@ -64,15 +64,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ isLoading: true, error: null });
 
-      // Normalize URL
+      // Normalize credentials
       const trimmedUrl = serverUrl.trim();
+      const trimmedToken = token.trim();
+
+      if (!trimmedUrl || !trimmedToken) {
+        set({ isLoading: false, error: 'Server URL and token are required' });
+        return false;
+      }
+
       const urlWithProtocol = /^https?:\/\//i.test(trimmedUrl)
         ? trimmedUrl
         : `https://${trimmedUrl}`;
       const normalizedUrl = urlWithProtocol.replace(/\/+$/, '');
 
       // Test connection
-      const client = initializeClient({ baseUrl: normalizedUrl, token });
+      const client = initializeClient({ baseUrl: normalizedUrl, token: trimmedToken });
       const isValid = await client.testConnection();
 
       if (!isValid) {
@@ -82,11 +89,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       // Save credentials
       await AsyncStorage.setItem(STORAGE_KEYS.SERVER_URL, normalizedUrl);
-      await AsyncStorage.setItem(STORAGE_KEYS.TOKEN, token);
+      await AsyncStorage.setItem(STORAGE_KEYS.TOKEN, trimmedToken);
 
       set({
         serverUrl: normalizedUrl,
-        token,
+        token: trimmedToken,
         isAuthenticated: true,
         client,
         isLoading: false,
