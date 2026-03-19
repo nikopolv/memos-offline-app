@@ -43,6 +43,7 @@
 
 ## Phase 6: Polish & Deploy
 - [x] Error handling & user feedback
+- [x] Login URL normalization (auto-prepend https:// when missing)
 - [x] Loading states
 - [x] Empty states
 - [x] App icon & splash screen

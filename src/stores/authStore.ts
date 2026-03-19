@@ -65,7 +65,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ isLoading: true, error: null });
 
       // Normalize URL
-      const normalizedUrl = serverUrl.replace(/\/$/, '');
+      const trimmedUrl = serverUrl.trim();
+      const urlWithProtocol = /^https?:\/\//i.test(trimmedUrl)
+        ? trimmedUrl
+        : `https://${trimmedUrl}`;
+      const normalizedUrl = urlWithProtocol.replace(/\/$/, '');
 
       // Test connection
       const client = initializeClient({ baseUrl: normalizedUrl, token });
