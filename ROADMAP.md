@@ -46,6 +46,7 @@
 - [x] Login URL normalization (auto-prepend https:// when missing)
 - [x] Loading states
 - [x] Empty states
+- [x] TypeScript type-check script (`npm run typecheck`)
 - [x] App icon & splash screen
 - [x] Build for Android APK
 - [x] Build for iOS (TestFlight)

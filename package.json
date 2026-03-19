@@ -8,6 +8,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "eslint src App.tsx index.ts --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "build:android:apk": "eas build --platform android --profile preview",
     "build:ios:testflight": "eas build --platform ios --profile production",
