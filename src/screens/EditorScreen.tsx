@@ -74,8 +74,9 @@ export function EditorScreen() {
     }
   };
 
-  // Quick tag buttons
-  const quickTags = ['#idea', '#task', '#note', '#important'];
+  // Quick tag buttons - Type tags first, then project tags
+  const typeTags = ['#task', '#idea', '#decision', '#learning'];
+  const projectTags = ['#logmore', '#routamo', '#goner', '#jydev', '#loggs', '#bov', '#polarnest'];
 
   const insertTag = (tag: string) => {
     const newContent = content + (content.endsWith(' ') || content === '' ? '' : ' ') + tag + ' ';
@@ -100,16 +101,38 @@ export function EditorScreen() {
           style={styles.editor}
           mode="flat"
           autoFocus={mode === 'create'}
+          textColor={theme.colors.onSurface}
+          placeholderTextColor={theme.colors.onSurfaceVariant}
         />
       </ScrollView>
 
       <View style={styles.toolbar}>
+        {/* Type tags row */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.tagButtons}
         >
-          {quickTags.map((tag) => (
+          {typeTags.map((tag) => (
+            <Button
+              key={tag}
+              mode="contained-tonal"
+              compact
+              onPress={() => insertTag(tag)}
+              style={styles.tagButton}
+            >
+              {tag}
+            </Button>
+          ))}
+        </ScrollView>
+        
+        {/* Project tags row */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.tagButtons}
+        >
+          {projectTags.map((tag) => (
             <Button
               key={tag}
               mode="outlined"

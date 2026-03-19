@@ -44,6 +44,7 @@ export class MemosClient {
   async listMemos(pageToken?: string, pageSize = 50): Promise<ApiMemoList> {
     const params = new URLSearchParams();
     params.set('pageSize', pageSize.toString());
+    params.set('parent', 'users/1'); // Required for Memos API v1
     if (pageToken) {
       params.set('pageToken', pageToken);
     }
@@ -108,11 +109,11 @@ export class MemosClient {
   }
 
   /**
-   * Test connection / get user profile
+   * Test connection by fetching memos list
    */
   async testConnection(): Promise<boolean> {
     try {
-      await this.fetch('/api/v1/users/me');
+      await this.listMemos(undefined, 1);
       return true;
     } catch {
       return false;
