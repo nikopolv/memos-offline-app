@@ -29,11 +29,11 @@ npm install
 # Start development
 npx expo start
 
-# Build for Android
-npx expo build:android
+# Build Android APK (EAS)
+npm run build:android:apk
 
-# Build for iOS
-npx expo build:ios
+# Build iOS (EAS)
+eas build --platform ios --profile production
 ```
 
 ## Configuration
