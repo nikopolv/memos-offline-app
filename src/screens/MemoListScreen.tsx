@@ -15,8 +15,10 @@ import {
   useTheme,
   ActivityIndicator,
   Snackbar,
+  Button,
 } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { useMemoStore } from '../stores';
 import { useNetworkStore } from '../utils/network';
 import { fullSync } from '../sync';
@@ -175,81 +177,94 @@ interface MemoCardProps {
 
 function MemoCard({ memo, activeTag, onPress, onDelete, onTogglePin, onTagPress }: MemoCardProps) {
   const theme = useTheme();
-  
+
   // Extract tags from content
   const tags = memo.content.match(/#\w+/g) || [];
-  
+
   // Get preview (first 150 chars, without tags)
   const preview = memo.content
     .replace(/#\w+/g, '')
     .trim()
     .substring(0, 150);
 
+  const renderRightActions = () => (
+    <View style={styles.swipeActions}>
+      <Button
+        mode="contained-tonal"
+        compact
+        style={styles.swipeButton}
+        onPress={onTogglePin}
+      >
+        {memo.pinned ? 'Unpin' : 'Pin'}
+      </Button>
+      <Button
+        mode="contained"
+        compact
+        buttonColor={theme.colors.error}
+        textColor={theme.colors.onError}
+        style={styles.swipeButton}
+        onPress={onDelete}
+      >
+        Delete
+      </Button>
+    </View>
+  );
+
   return (
-    <Card style={styles.card} onPress={onPress}>
-      <Card.Content>
-        <View style={styles.cardHeader}>
-          <View style={styles.cardMeta}>
-            {memo.pinned && (
-              <IconButton
-                icon="pin"
-                size={16}
-                iconColor={theme.colors.primary}
-                style={styles.pinIcon}
-              />
-            )}
-            {memo.syncStatus === 'pending' && (
-              <Chip compact style={styles.syncChip}>
-                Pending
-              </Chip>
-            )}
-          </View>
-          <View style={styles.cardActions}>
-            <IconButton
-              icon={memo.pinned ? 'pin-off' : 'pin'}
-              size={20}
-              onPress={onTogglePin}
-            />
-            <IconButton
-              icon="delete-outline"
-              size={20}
-              onPress={onDelete}
-            />
-          </View>
-        </View>
-
-        <Text variant="bodyMedium" numberOfLines={4}>
-          {preview}
-        </Text>
-
-        {tags.length > 0 && (
-          <View style={styles.tagsContainer}>
-            {tags.slice(0, 5).map((tag, index) => {
-              const tagName = tag.replace('#', '').toLowerCase();
-              const isActive = activeTag === tagName;
-
-              return (
-                <Chip
-                  key={index}
-                  compact
-                  selected={isActive}
-                  mode={isActive ? 'flat' : 'outlined'}
-                  style={styles.tag}
-                  textStyle={styles.tagText}
-                  onPress={() => onTagPress(isActive ? null : tagName)}
-                >
-                  {tag}
+    <Swipeable renderRightActions={renderRightActions} overshootRight={false}>
+      <Card style={styles.card} onPress={onPress}>
+        <Card.Content>
+          <View style={styles.cardHeader}>
+            <View style={styles.cardMeta}>
+              {memo.pinned && (
+                <IconButton
+                  icon="pin"
+                  size={16}
+                  iconColor={theme.colors.primary}
+                  style={styles.pinIcon}
+                />
+              )}
+              {memo.syncStatus === 'pending' && (
+                <Chip compact style={styles.syncChip}>
+                  Pending
                 </Chip>
-              );
-            })}
+              )}
+            </View>
           </View>
-        )}
 
-        <Text variant="bodySmall" style={styles.timestamp}>
-          {new Date(memo.updatedAt).toLocaleDateString()}
-        </Text>
-      </Card.Content>
-    </Card>
+          <Text variant="bodyMedium" numberOfLines={4}>
+            {preview}
+          </Text>
+
+          {tags.length > 0 && (
+            <View style={styles.tagsContainer}>
+              {tags.slice(0, 5).map((tag, index) => {
+                const tagName = tag.replace('#', '').toLowerCase();
+                const isActive = activeTag === tagName;
+
+                return (
+                  <Chip
+                    key={index}
+                    compact
+                    selected={isActive}
+                    mode={isActive ? 'flat' : 'outlined'}
+                    style={styles.tag}
+                    textStyle={styles.tagText}
+                    onPress={() => onTagPress(isActive ? null : tagName)}
+                  >
+                    {tag}
+                  </Chip>
+                );
+              })}
+            </View>
+          )}
+
+          <Text variant="bodySmall" style={styles.timestamp}>
+            {new Date(memo.updatedAt).toLocaleDateString()}
+          </Text>
+        </Card.Content>
+      </Card>
+    </Swipeable>
   );
 }
 
@@ -308,6 +323,15 @@ const styles = StyleSheet.create({
   },
   cardActions: {
     flexDirection: 'row',
+  },
+  swipeActions: {
+    marginBottom: 12,
+    justifyContent: 'center',
+    gap: 8,
+    paddingLeft: 8,
+  },
+  swipeButton: {
+    borderRadius: 8,
   },
   pinIcon: {
     margin: 0,

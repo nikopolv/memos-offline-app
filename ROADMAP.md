@@ -36,7 +36,7 @@
 - [x] Pin/unpin memos
 - [x] Dark/light theme
 - [x] Pull-to-refresh
-- [ ] Swipe actions (delete, pin)
+- [x] Swipe actions (delete, pin)
 - [ ] Share extension (Android/iOS)
 
 ## Phase 6: Polish & Deploy
