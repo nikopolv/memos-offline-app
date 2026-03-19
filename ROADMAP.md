@@ -6,7 +6,7 @@
 - [x] Create roadmap
 - [x] Set up Expo project with TypeScript
 - [x] Create folder structure
-- [ ] Configure ESLint + Prettier (optional)
+- [x] Configure ESLint + Prettier (optional)
 
 ## Phase 2: Core Infrastructure ✅
 - [x] SQLite database schema
