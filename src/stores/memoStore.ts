@@ -201,6 +201,8 @@ export const useMemoStore = create<MemoState>((set, get) => ({
       ? normalizedQuery.split(/\s+/).filter(Boolean)
       : [];
 
+    const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
     return memos
       .filter((memo) => {
         const content = memo.content.toLowerCase();
@@ -221,7 +223,8 @@ export const useMemoStore = create<MemoState>((set, get) => ({
 
         // Tag filter
         if (filterTag) {
-          const tagPattern = new RegExp(`#${filterTag}\\b`, 'i');
+          const escapedTag = escapeRegExp(filterTag);
+          const tagPattern = new RegExp(`#${escapedTag}\\b`, 'i');
           if (!tagPattern.test(memo.content)) {
             return false;
           }
