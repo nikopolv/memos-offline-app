@@ -133,8 +133,29 @@ export function MemoListScreen() {
             <Text variant="bodyMedium" style={styles.emptySubtext}>
               {searchQuery || filterTag
                 ? 'Try clearing search or tag filters'
-                : 'Tap + to create your first memo'}
+                : 'Start by creating your first memo'}
             </Text>
+
+            {searchQuery || filterTag ? (
+              <Button
+                mode="outlined"
+                style={styles.emptyAction}
+                onPress={() => {
+                  setSearchQuery('');
+                  setFilterTag(null);
+                }}
+              >
+                Clear filters
+              </Button>
+            ) : (
+              <Button
+                mode="contained"
+                style={styles.emptyAction}
+                onPress={handleCreateMemo}
+              >
+                Create memo
+              </Button>
+            )}
           </View>
         }
       />
@@ -301,6 +322,9 @@ const styles = StyleSheet.create({
   emptySubtext: {
     opacity: 0.5,
     marginTop: 8,
+  },
+  emptyAction: {
+    marginTop: 16,
   },
   fab: {
     position: 'absolute',
