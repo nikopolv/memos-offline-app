@@ -201,32 +201,40 @@ export const useMemoStore = create<MemoState>((set, get) => ({
       ? normalizedQuery.split(/\s+/).filter(Boolean)
       : [];
 
-    return memos.filter((memo) => {
-      const content = memo.content.toLowerCase();
+    return memos
+      .filter((memo) => {
+        const content = memo.content.toLowerCase();
 
-      // Local full-text style search:
-      // - split query into terms
-      // - every term must match either a word prefix or substring
-      if (searchTerms.length > 0) {
-        const words = content.split(/\W+/).filter(Boolean);
-        const matchesAllTerms = searchTerms.every((term) => {
-          return words.some((word) => word.startsWith(term)) || content.includes(term);
-        });
+        // Local full-text style search:
+        // - split query into terms
+        // - every term must match either a word prefix or substring
+        if (searchTerms.length > 0) {
+          const words = content.split(/\W+/).filter(Boolean);
+          const matchesAllTerms = searchTerms.every((term) => {
+            return words.some((word) => word.startsWith(term)) || content.includes(term);
+          });
 
-        if (!matchesAllTerms) {
-          return false;
+          if (!matchesAllTerms) {
+            return false;
+          }
         }
-      }
 
-      // Tag filter
-      if (filterTag) {
-        const tagPattern = new RegExp(`#${filterTag}\\b`, 'i');
-        if (!tagPattern.test(memo.content)) {
-          return false;
+        // Tag filter
+        if (filterTag) {
+          const tagPattern = new RegExp(`#${filterTag}\\b`, 'i');
+          if (!tagPattern.test(memo.content)) {
+            return false;
+          }
         }
-      }
 
-      return true;
-    });
+        return true;
+      })
+      .sort((a, b) => {
+        if (a.pinned !== b.pinned) {
+          return a.pinned ? -1 : 1;
+        }
+
+        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+      });
   },
 }));

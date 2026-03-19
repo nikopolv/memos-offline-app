@@ -33,7 +33,7 @@
 
 ## Phase 5: Features
 - [x] Full-text search (local)
-- [ ] Pin/unpin memos
+- [x] Pin/unpin memos
 - [x] Dark/light theme
 - [ ] Pull-to-refresh
 - [ ] Swipe actions (delete, pin)
