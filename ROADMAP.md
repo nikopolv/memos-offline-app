@@ -41,7 +41,7 @@
 
 ## Phase 6: Polish & Deploy
 - [x] Error handling & user feedback
-- [ ] Loading states
+- [x] Loading states
 - [ ] Empty states
 - [ ] App icon & splash screen
 - [ ] Build for Android APK

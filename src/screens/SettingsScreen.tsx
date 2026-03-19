@@ -22,17 +22,23 @@ export function SettingsScreen() {
     failedCount: 0,
   });
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isLoadingSyncStatus, setIsLoadingSyncStatus] = useState(true);
 
   useEffect(() => {
     loadSyncStatus();
   }, []);
 
   const loadSyncStatus = async () => {
-    const status = await getSyncStatus();
-    setSyncStatus({
-      pendingCount: status.pendingCount,
-      failedCount: status.failedCount,
-    });
+    setIsLoadingSyncStatus(true);
+    try {
+      const status = await getSyncStatus();
+      setSyncStatus({
+        pendingCount: status.pendingCount,
+        failedCount: status.failedCount,
+      });
+    } finally {
+      setIsLoadingSyncStatus(false);
+    }
   };
 
   const handleSync = async () => {
@@ -105,7 +111,11 @@ export function SettingsScreen() {
         
         <List.Item
           title="Pending Changes"
-          description={`${syncStatus.pendingCount} items waiting to sync`}
+          description={
+            isLoadingSyncStatus
+              ? 'Loading sync status...'
+              : `${syncStatus.pendingCount} items waiting to sync`
+          }
           left={(props) => <List.Icon {...props} icon="cloud-upload" />}
         />
         
@@ -124,7 +134,7 @@ export function SettingsScreen() {
             mode="contained"
             onPress={handleSync}
             loading={isSyncing}
-            disabled={isSyncing || !isConnected}
+            disabled={isSyncing || isLoadingSyncStatus || !isConnected}
             icon="sync"
           >
             Sync Now
