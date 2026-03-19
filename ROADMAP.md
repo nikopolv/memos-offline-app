@@ -46,7 +46,7 @@
 - [x] App icon & splash screen
 - [x] Build for Android APK
 - [x] Build for iOS (TestFlight)
-- [ ] macOS build (Catalyst)
+- [x] macOS build (Catalyst)
 
 ---
 

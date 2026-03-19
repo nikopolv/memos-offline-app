@@ -34,6 +34,9 @@ npm run build:android:apk
 
 # Build iOS (EAS)
 eas build --platform ios --profile production
+
+# Build macOS (Catalyst via EAS)
+eas build --platform ios --profile macos
 ```
 
 ## Configuration

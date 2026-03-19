@@ -20,6 +20,12 @@
       "ios": {
         "autoIncrement": true
       }
+    },
+    "macos": {
+      "extends": "production",
+      "ios": {
+        "simulator": false
+      }
     }
   },
   "submit": {

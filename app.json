@@ -17,8 +17,9 @@
     },
     "ios": {
       "supportsTablet": true,
+      "supportsMacCatalyst": true,
       "bundleIdentifier": "com.nikopolv.memosoffline"
-    },
+    }
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
