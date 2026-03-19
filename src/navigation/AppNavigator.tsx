@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, LinkingOptions } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useTheme } from 'react-native-paper';
@@ -18,6 +18,21 @@ import { ActivityIndicator, View } from 'react-native';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+
+const linking: LinkingOptions<any> = {
+  prefixes: ['memosoffline://'],
+  config: {
+    screens: {
+      Main: {
+        screens: {
+          Memos: 'memos',
+          Settings: 'settings',
+        },
+      },
+      Editor: 'new',
+    },
+  },
+};
 
 function MainTabs() {
   const theme = useTheme();
@@ -76,7 +91,7 @@ export function AppNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <Stack.Navigator>
         {!isAuthenticated ? (
           <Stack.Screen

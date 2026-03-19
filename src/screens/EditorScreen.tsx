@@ -19,19 +19,25 @@ export function EditorScreen() {
   
   const mode: EditorMode = route.params?.mode || 'create';
   const memoId: string | undefined = route.params?.memoId;
+  const initialContent: string = route.params?.initialContent || '';
 
   const { memos, createMemo, updateMemo } = useMemoStore();
   const existingMemo = memoId ? memos.find((m) => m.id === memoId) : undefined;
 
-  const [content, setContent] = useState(existingMemo?.content || '');
+  const [content, setContent] = useState(existingMemo?.content || initialContent);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
   useEffect(() => {
     if (existingMemo) {
       setContent(existingMemo.content);
+      return;
     }
-  }, [existingMemo]);
+
+    if (mode === 'create' && initialContent) {
+      setContent(initialContent);
+    }
+  }, [existingMemo, mode, initialContent]);
 
   useEffect(() => {
     if (existingMemo) {

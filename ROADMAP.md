@@ -38,6 +38,8 @@
 - [x] Pull-to-refresh
 - [x] Swipe actions (delete, pin)
 - [ ] Share extension (Android/iOS)
+  - [x] Deep-link compose support (`memosoffline://new?initialContent=...`)
+  - [ ] Native OS share target integration
 
 ## Phase 6: Polish & Deploy
 - [x] Error handling & user feedback
