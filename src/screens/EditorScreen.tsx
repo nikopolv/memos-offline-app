@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import {
   TextInput,
@@ -27,17 +27,23 @@ export function EditorScreen() {
   const [content, setContent] = useState(existingMemo?.content || initialContent);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const hydratedMemoIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (existingMemo) {
-      setContent(existingMemo.content);
+      if (hydratedMemoIdRef.current !== existingMemo.id) {
+        setContent(existingMemo.content);
+        hydratedMemoIdRef.current = existingMemo.id;
+      }
       return;
     }
+
+    hydratedMemoIdRef.current = null;
 
     if (mode === 'create' && initialContent) {
       setContent(initialContent);
     }
-  }, [existingMemo, mode, initialContent]);
+  }, [existingMemo?.id, existingMemo?.content, mode, initialContent]);
 
   useEffect(() => {
     if (existingMemo) {

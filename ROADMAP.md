@@ -48,6 +48,7 @@
 - [x] Login credential normalization (trim token/url and guard empty values)
 - [x] Tag filter regex escaping (handle special characters safely)
 - [x] Editor toolbar/tag insertion uses functional updates (prevents dropped text on rapid taps)
+- [x] Editor no longer overwrites unsaved edits when memo store refreshes in background
 - [x] Loading states
 - [x] Empty states
 - [x] TypeScript type-check script (`npm run typecheck`)
