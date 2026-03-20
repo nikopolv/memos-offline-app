@@ -9,6 +9,12 @@ import {
   useTheme,
 } from 'react-native-paper';
 import { useAuthStore } from '../stores';
+import {
+  ACCESS_TOKEN_INPUT_BEHAVIOR,
+  SERVER_URL_INPUT_BEHAVIOR,
+  canSubmitLoginCredentials,
+  normalizeLoginCredentials,
+} from './loginCredentials';
 
 export function LoginScreen() {
   const theme = useTheme();
@@ -19,11 +25,13 @@ export function LoginScreen() {
   const [showToken, setShowToken] = useState(false);
 
   const handleLogin = async () => {
-    if (!serverUrl.trim() || !token.trim()) return;
-    await login(serverUrl.trim(), token.trim());
+    if (!canSubmitLoginCredentials(serverUrl, token)) return;
+
+    const normalized = normalizeLoginCredentials(serverUrl, token);
+    await login(normalized.serverUrl, normalized.token);
   };
 
-  const isValid = serverUrl.trim().length > 0 && token.trim().length > 0;
+  const isValid = canSubmitLoginCredentials(serverUrl, token);
 
   return (
     <KeyboardAvoidingView
@@ -46,8 +54,8 @@ export function LoginScreen() {
             clearError();
           }}
           placeholder="https://memos.example.com"
-          autoCapitalize="none"
-          autoCorrect={false}
+          autoCapitalize={SERVER_URL_INPUT_BEHAVIOR.autoCapitalize}
+          autoCorrect={SERVER_URL_INPUT_BEHAVIOR.autoCorrect}
           keyboardType="url"
           style={styles.input}
           mode="outlined"
@@ -60,8 +68,8 @@ export function LoginScreen() {
             setToken(text);
             clearError();
           }}
-          autoCapitalize="none"
-          autoCorrect={false}
+          autoCapitalize={ACCESS_TOKEN_INPUT_BEHAVIOR.autoCapitalize}
+          autoCorrect={ACCESS_TOKEN_INPUT_BEHAVIOR.autoCorrect}
           secureTextEntry={!showToken}
           right={
             <TextInput.Icon
