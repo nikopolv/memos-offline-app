@@ -60,6 +60,8 @@ export function LoginScreen() {
             setToken(text);
             clearError();
           }}
+          autoCapitalize="none"
+          autoCorrect={false}
           secureTextEntry={!showToken}
           right={
             <TextInput.Icon
