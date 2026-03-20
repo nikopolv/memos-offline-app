@@ -84,9 +84,15 @@ export function EditorScreen() {
   const typeTags = ['#task', '#idea', '#decision', '#learning'];
   const projectTags = ['#logmore', '#routamo', '#goner', '#jydev', '#loggs', '#bov', '#polarnest'];
 
+  const appendToContent = (suffix: string) => {
+    setContent((current) => current + suffix);
+  };
+
   const insertTag = (tag: string) => {
-    const newContent = content + (content.endsWith(' ') || content === '' ? '' : ' ') + tag + ' ';
-    setContent(newContent);
+    setContent((current) => {
+      const separator = current.endsWith(' ') || current === '' ? '' : ' ';
+      return current + separator + tag + ' ';
+    });
   };
 
   return (
@@ -156,28 +162,28 @@ export function EditorScreen() {
             icon="format-bold"
             size={20}
             onPress={() => {
-              setContent(content + '**text**');
+              appendToContent('**text**');
             }}
           />
           <IconButton
             icon="format-list-bulleted"
             size={20}
             onPress={() => {
-              setContent(content + '\n- ');
+              appendToContent('\n- ');
             }}
           />
           <IconButton
             icon="checkbox-marked-outline"
             size={20}
             onPress={() => {
-              setContent(content + '\n- [ ] ');
+              appendToContent('\n- [ ] ');
             }}
           />
           <IconButton
             icon="code-tags"
             size={20}
             onPress={() => {
-              setContent(content + '`code`');
+              appendToContent('`code`');
             }}
           />
         </View>
