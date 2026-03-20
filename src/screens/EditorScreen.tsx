@@ -66,7 +66,7 @@ export function EditorScreen() {
         </Button>
       ),
     });
-  }, [navigation, hasChanges, isSaving, content]);
+  }, [navigation, hasChanges, isSaving]);
 
   const handleSave = async () => {
     if (!content.trim()) return;

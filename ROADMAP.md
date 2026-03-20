@@ -53,6 +53,7 @@
 - [x] Empty states
 - [x] TypeScript type-check script (`npm run typecheck`)
 - [x] App icon & splash screen
+- [x] Editor header Save button effect deps cleanup (avoid unnecessary header re-renders)
 - [x] Build for Android APK
 - [x] Build for iOS (TestFlight)
 - [x] macOS build (Catalyst)
