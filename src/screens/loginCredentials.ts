@@ -8,9 +8,21 @@ export const ACCESS_TOKEN_INPUT_BEHAVIOR = {
   autoCorrect: false,
 };
 
+export function normalizeServerUrl(serverUrl: string) {
+  const trimmedUrl = serverUrl.trim();
+
+  if (!trimmedUrl) return '';
+
+  const urlWithProtocol = /^https?:\/\//i.test(trimmedUrl)
+    ? trimmedUrl
+    : `https://${trimmedUrl}`;
+
+  return urlWithProtocol.replace(/\/+$/, '');
+}
+
 export function normalizeLoginCredentials(serverUrl: string, token: string) {
   return {
-    serverUrl: serverUrl.trim(),
+    serverUrl: normalizeServerUrl(serverUrl),
     token: token.trim(),
   };
 }
