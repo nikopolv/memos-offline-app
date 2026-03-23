@@ -62,6 +62,9 @@
 - [x] Exclude generated web export output from TypeScript verification (`dist/`)
 - [x] App icon & splash screen
 - [x] Editor header Save button effect deps cleanup (avoid unnecessary header re-renders)
+- [x] Web icon rendering no longer depends on font glyph loading; Paper and tab icons use a shared cross-platform fallback
+- [x] Editor and auth inputs now enforce explicit high-contrast light-surface text styling
+- [x] Bottom-tab spacing, FAB placement, and tag/filter tap targets tuned to avoid mobile control overlap
 - [x] Build for Android APK
 - [x] Build for iOS (TestFlight)
 - [x] macOS build (Catalyst)

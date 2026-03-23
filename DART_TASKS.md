@@ -11,6 +11,8 @@
 - [x] Add a first-run onboarding gate on the login screen with a short setup checklist and persisted dismissal state. (`src/screens/LoginScreen.tsx`)
 - [x] Replace hardcoded editor tag presets with reusable suggestions from existing memos and add a one-step custom tag inserter. (`src/screens/EditorScreen.tsx`)
 - [x] Improve mobile ergonomics and readability with safer screen spacing, larger tap targets, and better small-screen login/editor behavior. (`src/screens/LoginScreen.tsx`, `src/screens/MemoListScreen.tsx`, `src/screens/EditorScreen.tsx`)
+- [x] Replace fragile web icon-font usage with a shared cross-platform icon renderer so list/editor/nav icons survive production web export. (`App.tsx`, `src/components/AppIcon.tsx`, `src/navigation/AppNavigator.tsx`)
+- [x] Force accessible contrast for the editor and key text inputs, and move memo-list actions clear of the bottom tab bar on mobile. (`src/screens/EditorScreen.tsx`, `src/screens/LoginScreen.tsx`, `src/screens/MemoListScreen.tsx`, `src/components/TagFilter.tsx`)
 
 ## Next
 - [ ] No unblocked P0/P1 UX tasks currently listed.
