@@ -49,6 +49,23 @@ function MainTabs() {
     <Tab.Navigator
       screenOptions={{
         tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.onSurfaceVariant,
+        tabBarHideOnKeyboard: true,
+        tabBarItemStyle: {
+          minHeight: 56,
+          paddingVertical: 4,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
+        },
+        tabBarStyle: {
+          backgroundColor: theme.colors.elevation.level2,
+          borderTopColor: theme.colors.outlineVariant,
+          borderTopWidth: 1,
+          height: 72,
+          paddingTop: 6,
+        },
         headerShown: true,
       }}
     >

@@ -135,8 +135,12 @@ export function LoginScreen() {
                 autoCorrect={SERVER_URL_INPUT_BEHAVIOR.autoCorrect}
                 keyboardType="url"
                 textContentType="URL"
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.colors.surface }]}
                 mode="outlined"
+                textColor={theme.colors.onSurface}
+                outlineColor={theme.colors.outline}
+                activeOutlineColor={theme.colors.primary}
+                placeholderTextColor={theme.colors.onSurfaceVariant}
               />
 
               <TextInput
@@ -156,8 +160,12 @@ export function LoginScreen() {
                     onPress={() => setShowToken(!showToken)}
                   />
                 }
-                style={styles.input}
+                style={[styles.input, { backgroundColor: theme.colors.surface }]}
                 mode="outlined"
+                textColor={theme.colors.onSurface}
+                outlineColor={theme.colors.outline}
+                activeOutlineColor={theme.colors.primary}
+                placeholderTextColor={theme.colors.onSurfaceVariant}
               />
 
               {error && (

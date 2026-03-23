@@ -136,7 +136,7 @@ export function EditorScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView
@@ -149,15 +149,34 @@ export function EditorScreen() {
           onChangeText={setContent}
           placeholder="Write your memo... (Markdown supported)"
           multiline
-          style={styles.editor}
+          style={[
+            styles.editor,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.outlineVariant,
+              color: theme.colors.onSurface,
+            },
+          ]}
           mode="flat"
           autoFocus={mode === 'create'}
           textColor={theme.colors.onSurface}
           placeholderTextColor={theme.colors.onSurfaceVariant}
+          underlineColor="transparent"
+          activeUnderlineColor="transparent"
+          selectionColor={theme.colors.primary}
         />
       </ScrollView>
 
-      <View style={[styles.toolbar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+      <View
+        style={[
+          styles.toolbar,
+          {
+            backgroundColor: theme.colors.elevation.level1,
+            borderTopColor: theme.colors.outlineVariant,
+            paddingBottom: Math.max(insets.bottom, 12),
+          },
+        ]}
+      >
         <View style={styles.customTagRow}>
           <TextInput
             value={customTag}
@@ -167,9 +186,13 @@ export function EditorScreen() {
             placeholder="Add tag fast"
             autoCapitalize="none"
             autoCorrect={false}
-            style={styles.customTagInput}
+            style={[styles.customTagInput, { backgroundColor: theme.colors.surface }]}
             onSubmitEditing={handleInsertCustomTag}
             accessibilityLabel="Custom tag input"
+            textColor={theme.colors.onSurface}
+            outlineColor={theme.colors.outline}
+            activeOutlineColor={theme.colors.primary}
+            placeholderTextColor={theme.colors.onSurfaceVariant}
           />
           <Button
             mode="contained"
@@ -247,6 +270,9 @@ export function EditorScreen() {
           <IconButton
             icon="format-bold"
             size={20}
+            mode="contained-tonal"
+            containerColor={theme.colors.secondaryContainer}
+            iconColor={theme.colors.onSecondaryContainer}
             onPress={() => {
               appendToContent('**text**');
             }}
@@ -254,6 +280,9 @@ export function EditorScreen() {
           <IconButton
             icon="format-list-bulleted"
             size={20}
+            mode="contained-tonal"
+            containerColor={theme.colors.secondaryContainer}
+            iconColor={theme.colors.onSecondaryContainer}
             onPress={() => {
               appendToContent('\n- ');
             }}
@@ -261,6 +290,9 @@ export function EditorScreen() {
           <IconButton
             icon="checkbox-marked-outline"
             size={20}
+            mode="contained-tonal"
+            containerColor={theme.colors.secondaryContainer}
+            iconColor={theme.colors.onSecondaryContainer}
             onPress={() => {
               appendToContent('\n- [ ] ');
             }}
@@ -268,6 +300,9 @@ export function EditorScreen() {
           <IconButton
             icon="code-tags"
             size={20}
+            mode="contained-tonal"
+            containerColor={theme.colors.secondaryContainer}
+            iconColor={theme.colors.onSecondaryContainer}
             onPress={() => {
               appendToContent('`code`');
             }}
@@ -275,7 +310,15 @@ export function EditorScreen() {
         </View>
       </View>
 
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+      <View
+        style={[
+          styles.footer,
+          {
+            backgroundColor: theme.colors.elevation.level1,
+            paddingBottom: Math.max(insets.bottom, 8),
+          },
+        ]}
+      >
         <Text variant="bodySmall" style={styles.charCount}>
           {content.length} characters
         </Text>
@@ -293,6 +336,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   editor: {
     flex: 1,
@@ -300,12 +345,13 @@ const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 26,
     padding: 16,
-    backgroundColor: 'transparent',
+    borderRadius: 20,
+    borderWidth: 1,
   },
   toolbar: {
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0, 0, 0, 0.1)',
-    padding: 8,
+    paddingHorizontal: 8,
+    paddingTop: 10,
   },
   customTagRow: {
     flexDirection: 'row',
@@ -337,6 +383,8 @@ const styles = StyleSheet.create({
   formatButtons: {
     flexDirection: 'row',
     justifyContent: 'center',
+    gap: 8,
+    paddingTop: 4,
   },
   footer: {
     padding: 8,

@@ -51,6 +51,7 @@ export function TagFilter() {
             onPress={() => setFilterTag(null)}
             style={[styles.chip, styles.clearChip]}
             icon="close"
+            compact={false}
           >
             Clear
           </Chip>
@@ -64,6 +65,7 @@ export function TagFilter() {
             <Chip
               key={tag}
               mode={isSelected ? 'flat' : 'outlined'}
+              compact={false}
               selected={isSelected}
               onPress={() => handleTagPress(tag)}
               style={[
@@ -87,9 +89,12 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     gap: 8,
+    paddingBottom: 4,
   },
   chip: {
     marginRight: 4,
+    minHeight: 40,
+    justifyContent: 'center',
   },
   clearChip: {
     marginRight: 8,

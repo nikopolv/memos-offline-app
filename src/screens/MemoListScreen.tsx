@@ -6,6 +6,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import {
+  useBottomTabBarHeight,
   FAB,
   Searchbar,
   Text,
@@ -36,6 +37,7 @@ interface SyncBannerState {
 export function MemoListScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   const navigation = useNavigation<any>();
   const {
     memos,
@@ -141,6 +143,8 @@ export function MemoListScreen() {
 
   const filteredMemos = getFilteredMemos();
   const showInitialSkeleton = isLoading && memos.length === 0;
+  const listBottomPadding = tabBarHeight + insets.bottom + 104;
+  const fabBottom = tabBarHeight + 20;
 
   const renderMemoItem = ({ item }: { item: Memo }) => (
     <MemoCard
@@ -159,8 +163,17 @@ export function MemoListScreen() {
         placeholder="Search memos..."
         onChangeText={setSearchQuery}
         value={searchQuery}
-        style={styles.searchbar}
+        style={[
+          styles.searchbar,
+          {
+            backgroundColor: theme.colors.surface,
+            borderColor: theme.colors.outlineVariant,
+          },
+        ]}
         inputStyle={styles.searchInput}
+        icon="magnify"
+        clearIcon="close"
+        placeholderTextColor={theme.colors.onSurfaceVariant}
         accessibilityLabel="Search memos"
       />
 
@@ -180,7 +193,7 @@ export function MemoListScreen() {
           data={Array.from({ length: 5 }, (_, index) => `skeleton-${index}`)}
           keyExtractor={(item) => item}
           renderItem={() => <MemoCardSkeleton />}
-          contentContainerStyle={[styles.list, { paddingBottom: 120 + insets.bottom }]}
+          contentContainerStyle={[styles.list, { paddingBottom: listBottomPadding }]}
           scrollEnabled={false}
         />
       ) : (
@@ -188,7 +201,7 @@ export function MemoListScreen() {
           data={filteredMemos}
           keyExtractor={(item) => item.id}
           renderItem={renderMemoItem}
-          contentContainerStyle={[styles.list, { paddingBottom: 120 + insets.bottom }]}
+          contentContainerStyle={[styles.list, { paddingBottom: listBottomPadding }]}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
           }
@@ -210,7 +223,14 @@ export function MemoListScreen() {
 
       <FAB
         icon="plus"
-        style={[styles.fab, { bottom: insets.bottom + 8 }]}
+        style={[
+          styles.fab,
+          {
+            backgroundColor: theme.colors.primaryContainer,
+            bottom: fabBottom,
+          },
+        ]}
+        color={theme.colors.onPrimaryContainer}
         onPress={handleCreateMemo}
         accessibilityLabel="Create memo"
       />
@@ -570,9 +590,12 @@ const styles = StyleSheet.create({
   searchbar: {
     margin: 16,
     marginBottom: 8,
+    borderRadius: 18,
+    borderWidth: 1,
   },
   searchInput: {
     fontSize: 16,
+    minHeight: 48,
   },
   syncBanner: {
     marginHorizontal: 16,
