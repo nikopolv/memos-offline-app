@@ -52,7 +52,9 @@
 - [x] Loading states
 - [x] Empty states
 - [x] TypeScript type-check script (`npm run typecheck`)
+- [x] Sync queue status banner with retryable in-screen error states
 - [x] Memos API parent resolution no longer assumes `users/1`, with fallback caching and empty-body response handling
+- [x] Exclude generated web export output from TypeScript verification (`dist/`)
 - [x] App icon & splash screen
 - [x] Editor header Save button effect deps cleanup (avoid unnecessary header re-renders)
 - [x] Build for Android APK

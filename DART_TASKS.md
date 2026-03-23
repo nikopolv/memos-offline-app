@@ -6,6 +6,7 @@
 - [x] Align login credential helper URL normalization with auth flow (`normalizeServerUrl` now trims, auto-prepends protocol, and strips trailing slashes; tested in `src/screens/loginCredentials.test.ts`).
 - [x] Remove the hardcoded Memos API `users/1` parent assumption and cover client fallback/caching behavior. (`src/api/client.ts`, `src/api/client.test.ts`)
 - [x] Add a real web/PWA `build` script so the required `npm run build` check is executable in CI and local workflow. (`package.json` now includes `build: expo export --platform web`; verified with successful `npm run build` export to `dist/`)
+- [x] Surface sync queue state with retryable in-screen banners on the memo list, and exclude generated `dist/` output from TypeScript verification. (`src/screens/MemoListScreen.tsx`, `tsconfig.json`)
 
 ## Next
-- [ ] No unblocked tasks currently listed.
+- [ ] Add skeleton/loading states for memo cards and supporting empty states beyond the main list-level spinner.

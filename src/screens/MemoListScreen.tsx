@@ -16,14 +16,21 @@ import {
   ActivityIndicator,
   Snackbar,
   Button,
+  Surface,
 } from 'react-native-paper';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useMemoStore } from '../stores';
 import { useNetworkStore } from '../utils/network';
-import { fullSync } from '../sync';
+import { fullSync, getSyncStatus } from '../sync';
 import { Memo } from '../types';
 import { TagFilter } from '../components';
+
+interface SyncBannerState {
+  pendingCount: number;
+  failedCount: number;
+  errorMessage: string | null;
+}
 
 export function MemoListScreen() {
   const theme = useTheme();
@@ -44,30 +51,83 @@ export function MemoListScreen() {
   } = useMemoStore();
   const { isConnected } = useNetworkStore();
   const [refreshing, setRefreshing] = React.useState(false);
+  const [isSyncing, setIsSyncing] = React.useState(false);
   const [refreshError, setRefreshError] = React.useState<string | null>(null);
+  const [syncBanner, setSyncBanner] = React.useState<SyncBannerState>({
+    pendingCount: 0,
+    failedCount: 0,
+    errorMessage: null,
+  });
 
-  useEffect(() => {
-    loadMemos();
+  const refreshSyncBanner = useCallback(async (errorMessage?: string | null) => {
+    const status = await getSyncStatus();
+    setSyncBanner({
+      pendingCount: status.pendingCount,
+      failedCount: status.failedCount,
+      errorMessage: errorMessage ?? null,
+    });
   }, []);
 
+  const loadMemosWithSyncBanner = useCallback(async () => {
+    await loadMemos();
+    await refreshSyncBanner();
+  }, [loadMemos, refreshSyncBanner]);
+
+  useEffect(() => {
+    loadMemosWithSyncBanner();
+  }, [loadMemosWithSyncBanner]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadMemosWithSyncBanner();
+    }, [loadMemosWithSyncBanner])
+  );
+
+  const runSync = useCallback(async () => {
+    if (isSyncing) return;
+
+    setIsSyncing(true);
+    setRefreshError(null);
+
+    try {
+      const result = await fullSync();
+      const errorMessage = result.errors[0] ?? null;
+
+      await loadMemos();
+      await refreshSyncBanner(errorMessage);
+
+      if (!result.success && errorMessage) {
+        setRefreshError(errorMessage);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to sync changes';
+      await loadMemos();
+      await refreshSyncBanner(message);
+      setRefreshError(message);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [isSyncing, loadMemos, refreshSyncBanner]);
+
   const handleRefresh = useCallback(async () => {
-    if (refreshing) return;
+    if (refreshing || isSyncing) return;
 
     setRefreshing(true);
     setRefreshError(null);
 
     try {
       if (isConnected) {
-        await fullSync();
+        await runSync();
+      } else {
+        await loadMemosWithSyncBanner();
       }
-      await loadMemos();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to refresh memos';
       setRefreshError(message);
     } finally {
       setRefreshing(false);
     }
-  }, [isConnected, loadMemos, refreshing]);
+  }, [isConnected, isSyncing, loadMemosWithSyncBanner, refreshing, runSync]);
 
   const handleCreateMemo = () => {
     navigation.navigate('Editor', { mode: 'create' });
@@ -107,13 +167,14 @@ export function MemoListScreen() {
         style={styles.searchbar}
       />
 
-      {!isConnected && (
-        <View style={[styles.offlineBanner, { backgroundColor: theme.colors.errorContainer }]}>
-          <Text style={{ color: theme.colors.onErrorContainer }}>
-            Offline — changes will sync when connected
-          </Text>
-        </View>
-      )}
+      <SyncStatusBanner
+        failedCount={syncBanner.failedCount}
+        isConnected={isConnected}
+        isSyncing={isSyncing}
+        onRetry={runSync}
+        pendingCount={syncBanner.pendingCount}
+        syncError={syncBanner.errorMessage}
+      />
 
       <TagFilter />
 
@@ -194,6 +255,106 @@ interface MemoCardProps {
   onDelete: () => void;
   onTogglePin: () => void;
   onTagPress: (tag: string | null) => void;
+}
+
+interface SyncStatusBannerProps {
+  failedCount: number;
+  isConnected: boolean;
+  isSyncing: boolean;
+  onRetry: () => void;
+  pendingCount: number;
+  syncError: string | null;
+}
+
+function SyncStatusBanner({
+  failedCount,
+  isConnected,
+  isSyncing,
+  onRetry,
+  pendingCount,
+  syncError,
+}: SyncStatusBannerProps) {
+  const theme = useTheme();
+
+  if (isSyncing) {
+    return (
+      <Surface style={[styles.syncBanner, { backgroundColor: theme.colors.secondaryContainer }]}>
+        <View style={styles.syncBannerHeader}>
+          <Text variant="titleSmall" style={{ color: theme.colors.onSecondaryContainer }}>
+            Syncing changes…
+          </Text>
+          <ActivityIndicator animating size="small" color={theme.colors.onSecondaryContainer} />
+        </View>
+        <Text variant="bodySmall" style={{ color: theme.colors.onSecondaryContainer }}>
+          Pulling the latest memos and uploading local edits.
+        </Text>
+      </Surface>
+    );
+  }
+
+  if (!isConnected) {
+    return (
+      <Surface style={[styles.syncBanner, { backgroundColor: theme.colors.errorContainer }]}>
+        <Text variant="titleSmall" style={{ color: theme.colors.onErrorContainer }}>
+          Offline
+        </Text>
+        <Text variant="bodySmall" style={{ color: theme.colors.onErrorContainer }}>
+          {pendingCount > 0
+            ? `${pendingCount} change${pendingCount === 1 ? '' : 's'} waiting to sync when connection returns.`
+            : 'Changes will sync automatically when connection returns.'}
+        </Text>
+      </Surface>
+    );
+  }
+
+  if (failedCount > 0 || syncError) {
+    return (
+      <Surface style={[styles.syncBanner, { backgroundColor: theme.colors.errorContainer }]}>
+        <View style={styles.syncBannerHeader}>
+          <Text variant="titleSmall" style={{ color: theme.colors.onErrorContainer }}>
+            Sync needs attention
+          </Text>
+          <Button
+            compact
+            mode="contained-tonal"
+            onPress={onRetry}
+            textColor={theme.colors.onErrorContainer}
+          >
+            Retry
+          </Button>
+        </View>
+        <Text variant="bodySmall" style={{ color: theme.colors.onErrorContainer }}>
+          {syncError ?? `${failedCount} change${failedCount === 1 ? '' : 's'} hit the retry limit.`}
+        </Text>
+      </Surface>
+    );
+  }
+
+  if (pendingCount > 0) {
+    return (
+      <Surface style={[styles.syncBanner, { backgroundColor: theme.colors.primaryContainer }]}>
+        <View style={styles.syncBannerHeader}>
+          <Text variant="titleSmall" style={{ color: theme.colors.onPrimaryContainer }}>
+            {pendingCount} change{pendingCount === 1 ? '' : 's'} ready to sync
+          </Text>
+          <Button compact mode="contained-tonal" onPress={onRetry}>
+            Sync now
+          </Button>
+        </View>
+        <Text variant="bodySmall" style={{ color: theme.colors.onPrimaryContainer }}>
+          Local edits are saved. Run sync now or pull to refresh.
+        </Text>
+      </Surface>
+    );
+  }
+
+  return (
+    <Surface style={[styles.syncBanner, { backgroundColor: theme.colors.surfaceVariant }]}>
+      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+        All changes synced.
+      </Text>
+    </Surface>
+  );
 }
 
 function MemoCard({ memo, activeTag, onPress, onDelete, onTogglePin, onTagPress }: MemoCardProps) {
@@ -302,9 +463,19 @@ const styles = StyleSheet.create({
     margin: 16,
     marginBottom: 8,
   },
-  offlineBanner: {
-    padding: 8,
+  syncBanner: {
+    marginHorizontal: 16,
+    marginBottom: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 16,
+    gap: 6,
+  },
+  syncBannerHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
   },
   list: {
     padding: 16,
