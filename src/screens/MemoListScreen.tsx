@@ -20,6 +20,7 @@ import {
 } from 'react-native-paper';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Swipeable } from 'react-native-gesture-handler';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMemoStore } from '../stores';
 import { useNetworkStore } from '../utils/network';
 import { fullSync, getSyncStatus } from '../sync';
@@ -34,6 +35,7 @@ interface SyncBannerState {
 
 export function MemoListScreen() {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const {
     memos,
@@ -158,6 +160,8 @@ export function MemoListScreen() {
         onChangeText={setSearchQuery}
         value={searchQuery}
         style={styles.searchbar}
+        inputStyle={styles.searchInput}
+        accessibilityLabel="Search memos"
       />
 
       <SyncStatusBanner
@@ -176,7 +180,7 @@ export function MemoListScreen() {
           data={Array.from({ length: 5 }, (_, index) => `skeleton-${index}`)}
           keyExtractor={(item) => item}
           renderItem={() => <MemoCardSkeleton />}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, { paddingBottom: 120 + insets.bottom }]}
           scrollEnabled={false}
         />
       ) : (
@@ -184,7 +188,7 @@ export function MemoListScreen() {
           data={filteredMemos}
           keyExtractor={(item) => item.id}
           renderItem={renderMemoItem}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, { paddingBottom: 120 + insets.bottom }]}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
           }
@@ -206,8 +210,9 @@ export function MemoListScreen() {
 
       <FAB
         icon="plus"
-        style={styles.fab}
+        style={[styles.fab, { bottom: insets.bottom + 8 }]}
         onPress={handleCreateMemo}
+        accessibilityLabel="Create memo"
       />
 
       <Snackbar
@@ -565,6 +570,9 @@ const styles = StyleSheet.create({
   searchbar: {
     margin: 16,
     marginBottom: 8,
+  },
+  searchInput: {
+    fontSize: 16,
   },
   syncBanner: {
     marginHorizontal: 16,

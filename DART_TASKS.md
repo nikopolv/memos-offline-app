@@ -10,6 +10,7 @@
 - [x] Replace the blocking memo-list spinner with card skeletons and tighten empty states around search, offline-first creation, and manual sync recovery. (`src/screens/MemoListScreen.tsx`)
 - [x] Add a first-run onboarding gate on the login screen with a short setup checklist and persisted dismissal state. (`src/screens/LoginScreen.tsx`)
 - [x] Replace hardcoded editor tag presets with reusable suggestions from existing memos and add a one-step custom tag inserter. (`src/screens/EditorScreen.tsx`)
+- [x] Improve mobile ergonomics and readability with safer screen spacing, larger tap targets, and better small-screen login/editor behavior. (`src/screens/LoginScreen.tsx`, `src/screens/MemoListScreen.tsx`, `src/screens/EditorScreen.tsx`)
 
 ## Next
-- [ ] Run a mobile ergonomics and readability/accessibility pass across login, list, and editor surfaces.
+- [ ] No unblocked P0/P1 UX tasks currently listed.

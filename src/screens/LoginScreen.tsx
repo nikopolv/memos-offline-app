@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import {
   TextInput,
   Button,
@@ -71,111 +71,119 @@ export function LoginScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <Surface style={styles.surface} elevation={2}>
-        {showOnboarding ? (
-          <>
-            <Text variant="headlineMedium" style={styles.title}>
-              Welcome to Memos Offline
-            </Text>
-            <Text variant="bodyMedium" style={styles.subtitle}>
-              A quick setup gets you to offline-ready memo capture in under a minute.
-            </Text>
-
-            <View style={styles.onboardingStep}>
-              <Text variant="titleSmall">1. Add your server</Text>
-              <Text variant="bodyMedium" style={styles.onboardingCopy}>
-                Paste the URL for the Memos instance you already use in the browser.
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Surface style={styles.surface} elevation={2}>
+          {showOnboarding ? (
+            <>
+              <Text variant="headlineMedium" style={styles.title}>
+                Welcome to Memos Offline
               </Text>
-            </View>
-
-            <View style={styles.onboardingStep}>
-              <Text variant="titleSmall">2. Paste an access token</Text>
-              <Text variant="bodyMedium" style={styles.onboardingCopy}>
-                In Memos, open Settings → Access Tokens and copy one into the app.
+              <Text variant="bodyMedium" style={styles.subtitle}>
+                A quick setup gets you to offline-ready memo capture in under a minute.
               </Text>
-            </View>
 
-            <View style={styles.onboardingStep}>
-              <Text variant="titleSmall">3. Start writing anywhere</Text>
-              <Text variant="bodyMedium" style={styles.onboardingCopy}>
-                New notes save locally first and sync automatically when the network cooperates.
+              <View style={styles.onboardingStep}>
+                <Text variant="titleSmall">1. Add your server</Text>
+                <Text variant="bodyMedium" style={styles.onboardingCopy}>
+                  Paste the URL for the Memos instance you already use in the browser.
+                </Text>
+              </View>
+
+              <View style={styles.onboardingStep}>
+                <Text variant="titleSmall">2. Paste an access token</Text>
+                <Text variant="bodyMedium" style={styles.onboardingCopy}>
+                  In Memos, open Settings → Access Tokens and copy one into the app.
+                </Text>
+              </View>
+
+              <View style={styles.onboardingStep}>
+                <Text variant="titleSmall">3. Start writing anywhere</Text>
+                <Text variant="bodyMedium" style={styles.onboardingCopy}>
+                  New notes save locally first and sync automatically when the network cooperates.
+                </Text>
+              </View>
+
+              <Button mode="contained" onPress={handleDismissOnboarding} style={styles.button}>
+                Start setup
+              </Button>
+
+              <Button mode="text" onPress={handleDismissOnboarding}>
+                I already know this
+              </Button>
+            </>
+          ) : (
+            <>
+              <Text variant="headlineMedium" style={styles.title}>
+                Memos
               </Text>
-            </View>
+              <Text variant="bodyMedium" style={styles.subtitle}>
+                Connect to your Memos server
+              </Text>
 
-            <Button mode="contained" onPress={handleDismissOnboarding} style={styles.button}>
-              Start setup
-            </Button>
+              <TextInput
+                label="Server URL"
+                value={serverUrl}
+                onChangeText={(text) => {
+                  setServerUrl(text);
+                  clearError();
+                }}
+                placeholder="https://memos.example.com"
+                autoCapitalize={SERVER_URL_INPUT_BEHAVIOR.autoCapitalize}
+                autoCorrect={SERVER_URL_INPUT_BEHAVIOR.autoCorrect}
+                keyboardType="url"
+                textContentType="URL"
+                style={styles.input}
+                mode="outlined"
+              />
 
-            <Button mode="text" onPress={handleDismissOnboarding}>
-              I already know this
-            </Button>
-          </>
-        ) : (
-          <>
-            <Text variant="headlineMedium" style={styles.title}>
-              Memos
-            </Text>
-            <Text variant="bodyMedium" style={styles.subtitle}>
-              Connect to your Memos server
-            </Text>
+              <TextInput
+                label="Access Token"
+                value={token}
+                onChangeText={(text) => {
+                  setToken(text);
+                  clearError();
+                }}
+                autoCapitalize={ACCESS_TOKEN_INPUT_BEHAVIOR.autoCapitalize}
+                autoCorrect={ACCESS_TOKEN_INPUT_BEHAVIOR.autoCorrect}
+                textContentType="password"
+                secureTextEntry={!showToken}
+                right={
+                  <TextInput.Icon
+                    icon={showToken ? 'eye-off' : 'eye'}
+                    onPress={() => setShowToken(!showToken)}
+                  />
+                }
+                style={styles.input}
+                mode="outlined"
+              />
 
-            <TextInput
-              label="Server URL"
-              value={serverUrl}
-              onChangeText={(text) => {
-                setServerUrl(text);
-                clearError();
-              }}
-              placeholder="https://memos.example.com"
-              autoCapitalize={SERVER_URL_INPUT_BEHAVIOR.autoCapitalize}
-              autoCorrect={SERVER_URL_INPUT_BEHAVIOR.autoCorrect}
-              keyboardType="url"
-              style={styles.input}
-              mode="outlined"
-            />
+              {error && (
+                <HelperText type="error" visible={!!error}>
+                  {error}
+                </HelperText>
+              )}
 
-            <TextInput
-              label="Access Token"
-              value={token}
-              onChangeText={(text) => {
-                setToken(text);
-                clearError();
-              }}
-              autoCapitalize={ACCESS_TOKEN_INPUT_BEHAVIOR.autoCapitalize}
-              autoCorrect={ACCESS_TOKEN_INPUT_BEHAVIOR.autoCorrect}
-              secureTextEntry={!showToken}
-              right={
-                <TextInput.Icon
-                  icon={showToken ? 'eye-off' : 'eye'}
-                  onPress={() => setShowToken(!showToken)}
-                />
-              }
-              style={styles.input}
-              mode="outlined"
-            />
+              <Button
+                mode="contained"
+                onPress={handleLogin}
+                loading={isLoading}
+                disabled={!isValid || isLoading}
+                style={styles.button}
+                contentStyle={styles.primaryButtonContent}
+              >
+                Connect
+              </Button>
 
-            {error && (
-              <HelperText type="error" visible={!!error}>
-                {error}
-              </HelperText>
-            )}
-
-            <Button
-              mode="contained"
-              onPress={handleLogin}
-              loading={isLoading}
-              disabled={!isValid || isLoading}
-              style={styles.button}
-            >
-              Connect
-            </Button>
-
-            <Text variant="bodySmall" style={styles.hint}>
-              Get your access token from Memos Settings → Access Tokens
-            </Text>
-          </>
-        )}
-      </Surface>
+              <Text variant="bodySmall" style={styles.hint}>
+                Get your access token from Memos Settings → Access Tokens
+              </Text>
+            </>
+          )}
+        </Surface>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -183,15 +191,21 @@ export function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    padding: 16,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 16,
+  },
   surface: {
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
     padding: 24,
     borderRadius: 16,
   },
@@ -217,6 +231,9 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 8,
+  },
+  primaryButtonContent: {
+    minHeight: 48,
   },
   hint: {
     textAlign: 'center',

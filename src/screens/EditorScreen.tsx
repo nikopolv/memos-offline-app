@@ -8,12 +8,14 @@ import {
   Text,
 } from 'react-native-paper';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMemoStore } from '../stores';
 
 type EditorMode = 'create' | 'edit';
 
 export function EditorScreen() {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   
@@ -139,7 +141,7 @@ export function EditorScreen() {
     >
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 24 }]}
         keyboardShouldPersistTaps="handled"
       >
         <TextInput
@@ -155,7 +157,7 @@ export function EditorScreen() {
         />
       </ScrollView>
 
-      <View style={styles.toolbar}>
+      <View style={[styles.toolbar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
         <View style={styles.customTagRow}>
           <TextInput
             value={customTag}
@@ -167,12 +169,14 @@ export function EditorScreen() {
             autoCorrect={false}
             style={styles.customTagInput}
             onSubmitEditing={handleInsertCustomTag}
+            accessibilityLabel="Custom tag input"
           />
           <Button
             mode="contained"
             compact
             onPress={handleInsertCustomTag}
             disabled={!normalizeTag(customTag)}
+            contentStyle={styles.toolbarButtonContent}
           >
             Add tag
           </Button>
@@ -193,6 +197,7 @@ export function EditorScreen() {
               compact
               onPress={() => insertTag(tag)}
               style={styles.tagButton}
+              contentStyle={styles.toolbarButtonContent}
             >
               {tag}
             </Button>
@@ -216,6 +221,7 @@ export function EditorScreen() {
                   compact
                   disabled
                   style={styles.tagButton}
+                  contentStyle={styles.toolbarButtonContent}
                 >
                   {tag}
                 </Button>
@@ -228,6 +234,7 @@ export function EditorScreen() {
                   compact
                   onPress={() => insertTag(tag)}
                   style={styles.tagButton}
+                  contentStyle={styles.toolbarButtonContent}
                 >
                   {tag}
                 </Button>
@@ -268,7 +275,7 @@ export function EditorScreen() {
         </View>
       </View>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 8) }]}>
         <Text variant="bodySmall" style={styles.charCount}>
           {content.length} characters
         </Text>
@@ -290,8 +297,8 @@ const styles = StyleSheet.create({
   editor: {
     flex: 1,
     minHeight: 300,
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 17,
+    lineHeight: 26,
     padding: 16,
     backgroundColor: 'transparent',
   },
@@ -314,6 +321,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     marginBottom: 6,
     opacity: 0.7,
+  },
+  toolbarButtonContent: {
+    minHeight: 40,
   },
   tagButtons: {
     flexDirection: 'row',
