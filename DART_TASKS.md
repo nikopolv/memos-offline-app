@@ -9,6 +9,7 @@
 - [x] Surface sync queue state with retryable in-screen banners on the memo list, and exclude generated `dist/` output from TypeScript verification. (`src/screens/MemoListScreen.tsx`, `tsconfig.json`)
 - [x] Replace the blocking memo-list spinner with card skeletons and tighten empty states around search, offline-first creation, and manual sync recovery. (`src/screens/MemoListScreen.tsx`)
 - [x] Add a first-run onboarding gate on the login screen with a short setup checklist and persisted dismissal state. (`src/screens/LoginScreen.tsx`)
+- [x] Replace hardcoded editor tag presets with reusable suggestions from existing memos and add a one-step custom tag inserter. (`src/screens/EditorScreen.tsx`)
 
 ## Next
-- [ ] Improve tag UX and creation speed so tags are easier to discover, insert, and reuse while editing.
+- [ ] Run a mobile ergonomics and readability/accessibility pass across login, list, and editor surfaces.

@@ -27,6 +27,7 @@ export function EditorScreen() {
   const [content, setContent] = useState(existingMemo?.content || initialContent);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [customTag, setCustomTag] = useState('');
   const hydratedMemoIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -86,10 +87,6 @@ export function EditorScreen() {
     }
   };
 
-  // Quick tag buttons - Type tags first, then project tags
-  const typeTags = ['#task', '#idea', '#decision', '#learning'];
-  const projectTags = ['#logmore', '#routamo', '#goner', '#jydev', '#loggs', '#bov', '#polarnest'];
-
   const appendToContent = (suffix: string) => {
     setContent((current) => current + suffix);
   };
@@ -99,6 +96,40 @@ export function EditorScreen() {
       const separator = current.endsWith(' ') || current === '' ? '' : ' ';
       return current + separator + tag + ' ';
     });
+  };
+
+  const normalizeTag = (value: string) => {
+    const trimmed = value.trim().replace(/\s+/g, '-').replace(/^#+/, '');
+    return trimmed ? `#${trimmed.toLowerCase()}` : '';
+  };
+
+  const currentTags = Array.from(
+    new Set((content.match(/#\w+/g) || []).map((tag) => tag.toLowerCase()))
+  );
+
+  const tagCounts = new Map<string, number>();
+  memos.forEach((memo) => {
+    const memoTags = memo.content.match(/#\w+/g) || [];
+    memoTags.forEach((tag) => {
+      const normalizedTag = tag.toLowerCase();
+      tagCounts.set(normalizedTag, (tagCounts.get(normalizedTag) || 0) + 1);
+    });
+  });
+
+  const suggestedTags = Array.from(tagCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([tag]) => tag)
+    .filter((tag) => !currentTags.includes(tag))
+    .slice(0, 8);
+
+  const quickTags = ['#task', '#idea', '#decision', '#learning'];
+
+  const handleInsertCustomTag = () => {
+    const normalizedTag = normalizeTag(customTag);
+    if (!normalizedTag) return;
+
+    insertTag(normalizedTag);
+    setCustomTag('');
   };
 
   return (
@@ -125,13 +156,37 @@ export function EditorScreen() {
       </ScrollView>
 
       <View style={styles.toolbar}>
-        {/* Type tags row */}
+        <View style={styles.customTagRow}>
+          <TextInput
+            value={customTag}
+            onChangeText={setCustomTag}
+            mode="outlined"
+            dense
+            placeholder="Add tag fast"
+            autoCapitalize="none"
+            autoCorrect={false}
+            style={styles.customTagInput}
+            onSubmitEditing={handleInsertCustomTag}
+          />
+          <Button
+            mode="contained"
+            compact
+            onPress={handleInsertCustomTag}
+            disabled={!normalizeTag(customTag)}
+          >
+            Add tag
+          </Button>
+        </View>
+
+        <Text variant="labelMedium" style={styles.toolbarLabel}>
+          Quick tags
+        </Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.tagButtons}
         >
-          {typeTags.map((tag) => (
+          {quickTags.map((tag) => (
             <Button
               key={tag}
               mode="contained-tonal"
@@ -143,25 +198,43 @@ export function EditorScreen() {
             </Button>
           ))}
         </ScrollView>
-        
-        {/* Project tags row */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tagButtons}
-        >
-          {projectTags.map((tag) => (
-            <Button
-              key={tag}
-              mode="outlined"
-              compact
-              onPress={() => insertTag(tag)}
-              style={styles.tagButton}
+
+        {(suggestedTags.length > 0 || currentTags.length > 0) && (
+          <>
+            <Text variant="labelMedium" style={styles.toolbarLabel}>
+              Suggested from your memos
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.tagButtons}
             >
-              {tag}
-            </Button>
-          ))}
-        </ScrollView>
+              {currentTags.map((tag) => (
+                <Button
+                  key={`current-${tag}`}
+                  mode="contained"
+                  compact
+                  disabled
+                  style={styles.tagButton}
+                >
+                  {tag}
+                </Button>
+              ))}
+
+              {suggestedTags.map((tag) => (
+                <Button
+                  key={tag}
+                  mode="outlined"
+                  compact
+                  onPress={() => insertTag(tag)}
+                  style={styles.tagButton}
+                >
+                  {tag}
+                </Button>
+              ))}
+            </ScrollView>
+          </>
+        )}
 
         <View style={styles.formatButtons}>
           <IconButton
@@ -226,6 +299,21 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: 'rgba(0, 0, 0, 0.1)',
     padding: 8,
+  },
+  customTagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 8,
+    marginBottom: 12,
+  },
+  customTagInput: {
+    flex: 1,
+  },
+  toolbarLabel: {
+    paddingHorizontal: 12,
+    marginBottom: 6,
+    opacity: 0.7,
   },
   tagButtons: {
     flexDirection: 'row',
