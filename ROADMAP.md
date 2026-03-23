@@ -51,6 +51,8 @@
 - [x] Editor no longer overwrites unsaved edits when memo store refreshes in background
 - [x] Loading states
 - [x] Empty states
+- [x] Memo list skeleton cards replace the blocking cold-start spinner
+- [x] Empty states now adapt for filters, offline-first creation, and manual sync recovery
 - [x] TypeScript type-check script (`npm run typecheck`)
 - [x] Sync queue status banner with retryable in-screen error states
 - [x] Memos API parent resolution no longer assumes `users/1`, with fallback caching and empty-body response handling

@@ -138,6 +138,7 @@ export function MemoListScreen() {
   };
 
   const filteredMemos = getFilteredMemos();
+  const showInitialSkeleton = isLoading && memos.length === 0;
 
   const renderMemoItem = ({ item }: { item: Memo }) => (
     <MemoCard
@@ -149,14 +150,6 @@ export function MemoListScreen() {
       onTagPress={setFilterTag}
     />
   );
-
-  if (isLoading && memos.length === 0) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
@@ -178,48 +171,38 @@ export function MemoListScreen() {
 
       <TagFilter />
 
-      <FlatList
-        data={filteredMemos}
-        keyExtractor={(item) => item.id}
-        renderItem={renderMemoItem}
-        contentContainerStyle={styles.list}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text variant="titleMedium" style={styles.emptyText}>
-              {searchQuery || filterTag ? 'No matching memos' : 'No memos yet'}
-            </Text>
-            <Text variant="bodyMedium" style={styles.emptySubtext}>
-              {searchQuery || filterTag
-                ? 'Try clearing search or tag filters'
-                : 'Start by creating your first memo'}
-            </Text>
-
-            {searchQuery || filterTag ? (
-              <Button
-                mode="outlined"
-                style={styles.emptyAction}
-                onPress={() => {
-                  setSearchQuery('');
-                  setFilterTag(null);
-                }}
-              >
-                Clear filters
-              </Button>
-            ) : (
-              <Button
-                mode="contained"
-                style={styles.emptyAction}
-                onPress={handleCreateMemo}
-              >
-                Create memo
-              </Button>
-            )}
-          </View>
-        }
-      />
+      {showInitialSkeleton ? (
+        <FlatList
+          data={Array.from({ length: 5 }, (_, index) => `skeleton-${index}`)}
+          keyExtractor={(item) => item}
+          renderItem={() => <MemoCardSkeleton />}
+          contentContainerStyle={styles.list}
+          scrollEnabled={false}
+        />
+      ) : (
+        <FlatList
+          data={filteredMemos}
+          keyExtractor={(item) => item.id}
+          renderItem={renderMemoItem}
+          contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          }
+          ListEmptyComponent={
+            <MemoListEmptyState
+              filterTag={filterTag}
+              isConnected={isConnected}
+              onClearFilters={() => {
+                setSearchQuery('');
+                setFilterTag(null);
+              }}
+              onCreateMemo={handleCreateMemo}
+              onSyncNow={runSync}
+              searchQuery={searchQuery}
+            />
+          }
+        />
+      )}
 
       <FAB
         icon="plus"
@@ -264,6 +247,15 @@ interface SyncStatusBannerProps {
   onRetry: () => void;
   pendingCount: number;
   syncError: string | null;
+}
+
+interface MemoListEmptyStateProps {
+  filterTag: string | null;
+  isConnected: boolean;
+  onClearFilters: () => void;
+  onCreateMemo: () => void;
+  onSyncNow: () => void;
+  searchQuery: string;
 }
 
 function SyncStatusBanner({
@@ -354,6 +346,117 @@ function SyncStatusBanner({
         All changes synced.
       </Text>
     </Surface>
+  );
+}
+
+function MemoListEmptyState({
+  filterTag,
+  isConnected,
+  onClearFilters,
+  onCreateMemo,
+  onSyncNow,
+  searchQuery,
+}: MemoListEmptyStateProps) {
+  const hasFilters = Boolean(searchQuery || filterTag);
+
+  if (hasFilters) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text variant="titleMedium" style={styles.emptyText}>
+          No matching memos
+        </Text>
+        <Text variant="bodyMedium" style={styles.emptySubtext}>
+          Clear the current search or tag filter to get back to your full list.
+        </Text>
+        <Button mode="outlined" style={styles.emptyAction} onPress={onClearFilters}>
+          Clear filters
+        </Button>
+      </View>
+    );
+  }
+
+  if (!isConnected) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text variant="titleMedium" style={styles.emptyText}>
+          No offline memos yet
+        </Text>
+        <Text variant="bodyMedium" style={styles.emptySubtext}>
+          Create a memo now and it will sync automatically when you are back online.
+        </Text>
+        <Button mode="contained" style={styles.emptyAction} onPress={onCreateMemo}>
+          Create offline memo
+        </Button>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.emptyContainer}>
+      <Text variant="titleMedium" style={styles.emptyText}>
+        No memos yet
+      </Text>
+      <Text variant="bodyMedium" style={styles.emptySubtext}>
+        Start a new memo or pull from the server if this account already has content.
+      </Text>
+      <Button mode="contained" style={styles.emptyAction} onPress={onCreateMemo}>
+        Create memo
+      </Button>
+      <Button mode="text" onPress={onSyncNow}>
+        Sync now
+      </Button>
+    </View>
+  );
+}
+
+function MemoCardSkeleton() {
+  const theme = useTheme();
+
+  return (
+    <Card style={styles.card} accessibilityLabel="Loading memo">
+      <Card.Content>
+        <View style={styles.skeletonHeader}>
+          <View
+            style={[
+              styles.skeletonChip,
+              { backgroundColor: theme.colors.surfaceVariant },
+            ]}
+          />
+        </View>
+        <View
+          style={[
+            styles.skeletonLinePrimary,
+            { backgroundColor: theme.colors.surfaceVariant },
+          ]}
+        />
+        <View
+          style={[
+            styles.skeletonLineSecondary,
+            { backgroundColor: theme.colors.surfaceVariant },
+          ]}
+        />
+        <View
+          style={[
+            styles.skeletonLineTertiary,
+            { backgroundColor: theme.colors.surfaceVariant },
+          ]}
+        />
+        <View style={styles.skeletonTagRow}>
+          <View
+            style={[
+              styles.skeletonTag,
+              { backgroundColor: theme.colors.surfaceVariant },
+            ]}
+          />
+          <View
+            style={[
+              styles.skeletonTag,
+              { backgroundColor: theme.colors.surfaceVariant },
+            ]}
+          />
+        </View>
+      </Card.Content>
+    </Card>
   );
 }
 
@@ -496,6 +599,43 @@ const styles = StyleSheet.create({
   },
   emptyAction: {
     marginTop: 16,
+  },
+  skeletonHeader: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginBottom: 14,
+  },
+  skeletonChip: {
+    width: 72,
+    height: 28,
+    borderRadius: 999,
+  },
+  skeletonLinePrimary: {
+    height: 14,
+    borderRadius: 999,
+    width: '92%',
+    marginBottom: 10,
+  },
+  skeletonLineSecondary: {
+    height: 14,
+    borderRadius: 999,
+    width: '78%',
+    marginBottom: 10,
+  },
+  skeletonLineTertiary: {
+    height: 14,
+    borderRadius: 999,
+    width: '64%',
+    marginBottom: 16,
+  },
+  skeletonTagRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  skeletonTag: {
+    width: 64,
+    height: 24,
+    borderRadius: 999,
   },
   fab: {
     position: 'absolute',
