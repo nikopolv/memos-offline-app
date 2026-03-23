@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useColorScheme } from 'react-native';
 import { useShareIntent } from 'expo-share-intent';
 import { AppNavigator } from './src/navigation';
+import { AppIcon } from './src/components';
 import { useThemeStore } from './src/stores';
 
 export default function App() {
@@ -21,7 +22,20 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <PaperProvider theme={theme}>
+      <PaperProvider
+        theme={theme}
+        settings={{
+          icon: ({ color, direction, name, size, testID }) => (
+            <AppIcon
+              color={color}
+              direction={direction}
+              name={String(name)}
+              size={size}
+              testID={testID}
+            />
+          ),
+        }}
+      >
         <StatusBar style={isDark ? 'light' : 'dark'} />
         <AppNavigator
           sharedIntent={hasShareIntent ? shareIntent : null}

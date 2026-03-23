@@ -3,12 +3,12 @@ import { NavigationContainer, LinkingOptions, createNavigationContainerRef } fro
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useTheme } from 'react-native-paper';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import type { ShareIntent } from 'expo-share-intent';
 
 import { useAuthStore } from '../stores';
 import { useNetworkStore } from '../utils/network';
 import { initDatabase } from '../db';
+import { AppIcon } from '../components';
 import {
   LoginScreen,
   MemoListScreen,
@@ -57,7 +57,7 @@ function MainTabs() {
         component={MemoListScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="notebook" size={size} color={color} />
+            <AppIcon name="notebook" size={size} color={color} />
           ),
         }}
       />
@@ -66,7 +66,7 @@ function MainTabs() {
         component={SettingsScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="cog" size={size} color={color} />
+            <AppIcon name="cog" size={size} color={color} />
           ),
         }}
       />
