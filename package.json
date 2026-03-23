@@ -14,7 +14,8 @@
     "build:android:apk": "eas build --platform android --profile preview",
     "build:ios:testflight": "eas build --platform ios --profile production",
     "build:macos:catalyst": "eas build --platform ios --profile macos",
-    "submit:ios:testflight": "eas submit --platform ios --profile production"
+    "submit:ios:testflight": "eas submit --platform ios --profile production",
+    "build": "expo export --platform web"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
