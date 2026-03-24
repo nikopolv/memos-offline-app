@@ -1,7 +1,8 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useLayoutEffect } from 'react';
 import {
   View,
   FlatList,
+  Pressable,
   StyleSheet,
   RefreshControl,
 } from 'react-native';
@@ -12,10 +13,8 @@ import {
   IconButton,
   Chip,
   useTheme,
-  ActivityIndicator,
   Snackbar,
   Button,
-  Surface,
 } from 'react-native-paper';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -24,7 +23,7 @@ import { useMemoStore } from '../stores';
 import { useNetworkStore } from '../utils/network';
 import { fullSync, getSyncStatus } from '../sync';
 import { Memo } from '../types';
-import { TagFilter, renderPaperIcon } from '../components';
+import { AppIcon, MarkdownPreview, TagFilter, renderPaperIcon } from '../components';
 
 interface SyncBannerState {
   pendingCount: number;
@@ -141,6 +140,56 @@ export function MemoListScreen() {
   const filteredMemos = getFilteredMemos();
   const showInitialSkeleton = isLoading && memos.length === 0;
   const listBottomPadding = tabBarHeight + 36;
+  const syncIconName =
+    isSyncing
+      ? 'sync'
+      : !isConnected
+        ? 'wifi-off'
+        : syncBanner.failedCount > 0 || syncBanner.errorMessage
+          ? 'alert-circle'
+          : syncBanner.pendingCount > 0
+            ? 'cloud-upload'
+            : 'sync';
+  const syncIconColor =
+    isSyncing || syncBanner.pendingCount > 0
+      ? theme.colors.primary
+      : !isConnected || syncBanner.failedCount > 0 || syncBanner.errorMessage
+        ? theme.colors.error
+        : theme.colors.onSurfaceVariant;
+  const syncLabel = isSyncing
+    ? 'Syncing changes'
+    : !isConnected
+      ? syncBanner.pendingCount > 0
+        ? `${syncBanner.pendingCount} changes waiting for connection`
+        : 'Offline'
+      : syncBanner.failedCount > 0 || syncBanner.errorMessage
+        ? 'Sync needs attention'
+        : syncBanner.pendingCount > 0
+          ? `${syncBanner.pendingCount} changes ready to sync`
+          : 'All changes synced';
+  const syncAction =
+    !isConnected || isSyncing
+      ? undefined
+      : syncBanner.pendingCount > 0 || syncBanner.failedCount > 0 || syncBanner.errorMessage
+        ? runSync
+        : handleRefresh;
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Pressable
+          accessibilityLabel={syncLabel}
+          accessibilityRole="button"
+          disabled={!syncAction}
+          hitSlop={8}
+          onPress={syncAction}
+          style={({ pressed }) => [styles.headerSyncButton, { opacity: pressed ? 0.72 : 1 }]}
+        >
+          <AppIcon name={syncIconName} size={18} color={syncIconColor} />
+        </Pressable>
+      ),
+    });
+  }, [navigation, syncAction, syncIconColor, syncIconName, syncLabel]);
 
   const renderMemoItem = ({ item }: { item: Memo }) => (
     <MemoCard
@@ -171,15 +220,6 @@ export function MemoListScreen() {
         clearIcon={renderPaperIcon('close')}
         placeholderTextColor={theme.colors.onSurfaceVariant}
         accessibilityLabel="Search memos"
-      />
-
-      <SyncStatusBanner
-        failedCount={syncBanner.failedCount}
-        isConnected={isConnected}
-        isSyncing={isSyncing}
-        onRetry={runSync}
-        pendingCount={syncBanner.pendingCount}
-        syncError={syncBanner.errorMessage}
       />
 
       <TagFilter />
@@ -247,15 +287,6 @@ interface MemoCardProps {
   onTagPress: (tag: string | null) => void;
 }
 
-interface SyncStatusBannerProps {
-  failedCount: number;
-  isConnected: boolean;
-  isSyncing: boolean;
-  onRetry: () => void;
-  pendingCount: number;
-  syncError: string | null;
-}
-
 interface MemoListEmptyStateProps {
   filterTag: string | null;
   isConnected: boolean;
@@ -263,97 +294,6 @@ interface MemoListEmptyStateProps {
   onCreateMemo: () => void;
   onSyncNow: () => void;
   searchQuery: string;
-}
-
-function SyncStatusBanner({
-  failedCount,
-  isConnected,
-  isSyncing,
-  onRetry,
-  pendingCount,
-  syncError,
-}: SyncStatusBannerProps) {
-  const theme = useTheme();
-
-  if (isSyncing) {
-    return (
-      <Surface style={[styles.syncBanner, { backgroundColor: theme.colors.secondaryContainer }]}>
-        <View style={styles.syncBannerHeader}>
-          <Text variant="titleSmall" style={{ color: theme.colors.onSecondaryContainer }}>
-            Syncing changes…
-          </Text>
-          <ActivityIndicator animating size="small" color={theme.colors.onSecondaryContainer} />
-        </View>
-        <Text variant="bodySmall" style={{ color: theme.colors.onSecondaryContainer }}>
-          Pulling the latest memos and uploading local edits.
-        </Text>
-      </Surface>
-    );
-  }
-
-  if (!isConnected) {
-    return (
-      <Surface style={[styles.syncBanner, { backgroundColor: theme.colors.errorContainer }]}>
-        <Text variant="titleSmall" style={{ color: theme.colors.onErrorContainer }}>
-          Offline
-        </Text>
-        <Text variant="bodySmall" style={{ color: theme.colors.onErrorContainer }}>
-          {pendingCount > 0
-            ? `${pendingCount} change${pendingCount === 1 ? '' : 's'} waiting to sync when connection returns.`
-            : 'Changes will sync automatically when connection returns.'}
-        </Text>
-      </Surface>
-    );
-  }
-
-  if (failedCount > 0 || syncError) {
-    return (
-      <Surface style={[styles.syncBanner, { backgroundColor: theme.colors.errorContainer }]}>
-        <View style={styles.syncBannerHeader}>
-          <Text variant="titleSmall" style={{ color: theme.colors.onErrorContainer }}>
-            Sync needs attention
-          </Text>
-          <Button
-            compact
-            mode="contained-tonal"
-            onPress={onRetry}
-            textColor={theme.colors.onErrorContainer}
-          >
-            Retry
-          </Button>
-        </View>
-        <Text variant="bodySmall" style={{ color: theme.colors.onErrorContainer }}>
-          {syncError ?? `${failedCount} change${failedCount === 1 ? '' : 's'} hit the retry limit.`}
-        </Text>
-      </Surface>
-    );
-  }
-
-  if (pendingCount > 0) {
-    return (
-      <Surface style={[styles.syncBanner, { backgroundColor: theme.colors.primaryContainer }]}>
-        <View style={styles.syncBannerHeader}>
-          <Text variant="titleSmall" style={{ color: theme.colors.onPrimaryContainer }}>
-            {pendingCount} change{pendingCount === 1 ? '' : 's'} ready to sync
-          </Text>
-          <Button compact mode="contained-tonal" onPress={onRetry}>
-            Sync now
-          </Button>
-        </View>
-        <Text variant="bodySmall" style={{ color: theme.colors.onPrimaryContainer }}>
-          Local edits are saved. Run sync now or pull to refresh.
-        </Text>
-      </Surface>
-    );
-  }
-
-  return (
-    <Surface style={[styles.syncBanner, { backgroundColor: theme.colors.surfaceVariant }]}>
-      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-        All changes synced.
-      </Text>
-    </Surface>
-  );
 }
 
 function MemoListEmptyState({
@@ -473,12 +413,6 @@ function MemoCard({ memo, activeTag, onPress, onDelete, onTogglePin, onTagPress 
   // Extract tags from content
   const tags = memo.content.match(/#\w+/g) || [];
 
-  // Get preview (first 150 chars, without tags)
-  const preview = memo.content
-    .replace(/#\w+/g, '')
-    .trim()
-    .substring(0, 150);
-
   const renderRightActions = () => (
     <View style={styles.swipeActions}>
       <Button
@@ -524,9 +458,7 @@ function MemoCard({ memo, activeTag, onPress, onDelete, onTogglePin, onTagPress 
             </View>
           </View>
 
-          <Text variant="bodyMedium" numberOfLines={4}>
-            {preview}
-          </Text>
+          <MarkdownPreview content={memo.content} maxCharacters={260} maxLines={8} />
 
           {tags.length > 0 && (
             <View style={styles.tagsContainer}>
@@ -571,7 +503,7 @@ const styles = StyleSheet.create({
   },
   searchbar: {
     margin: 16,
-    marginBottom: 8,
+    marginBottom: 10,
     borderRadius: 18,
     borderWidth: 1,
   },
@@ -579,19 +511,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     minHeight: 48,
   },
-  syncBanner: {
-    marginHorizontal: 16,
-    marginBottom: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 16,
-    gap: 6,
-  },
-  syncBannerHeader: {
-    flexDirection: 'row',
+  headerSyncButton: {
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
+    borderRadius: 999,
+    height: 32,
+    justifyContent: 'center',
+    marginRight: 6,
+    width: 32,
   },
   list: {
     padding: 16,

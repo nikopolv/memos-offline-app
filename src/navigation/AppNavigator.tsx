@@ -1,5 +1,11 @@
 import React, { useEffect } from 'react';
-import { NavigationContainer, LinkingOptions, createNavigationContainerRef } from '@react-navigation/native';
+import {
+  NavigationContainer,
+  LinkingOptions,
+  createNavigationContainerRef,
+  DarkTheme as NavigationDarkTheme,
+  DefaultTheme as NavigationDefaultTheme,
+} from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useTheme } from 'react-native-paper';
@@ -104,6 +110,16 @@ function MainTabs() {
           height: 72,
           paddingTop: 6,
         },
+        headerStyle: {
+          backgroundColor: theme.colors.background,
+          height: 52,
+        },
+        headerTintColor: theme.colors.onSurface,
+        headerTitleStyle: {
+          color: theme.colors.onSurface,
+          fontSize: 18,
+          fontWeight: '700',
+        },
         headerShown: true,
       }}
     >
@@ -184,6 +200,31 @@ export function AppNavigator({
   const theme = useTheme();
   const { isAuthenticated, isLoading, initialize } = useAuthStore();
   const { initialize: initNetwork } = useNetworkStore();
+  const navigationTheme = theme.dark
+    ? {
+        ...NavigationDarkTheme,
+        colors: {
+          ...NavigationDarkTheme.colors,
+          background: theme.colors.background,
+          border: theme.colors.outlineVariant,
+          card: theme.colors.background,
+          notification: theme.colors.error,
+          primary: theme.colors.primary,
+          text: theme.colors.onSurface,
+        },
+      }
+    : {
+        ...NavigationDefaultTheme,
+        colors: {
+          ...NavigationDefaultTheme.colors,
+          background: theme.colors.background,
+          border: theme.colors.outlineVariant,
+          card: theme.colors.background,
+          notification: theme.colors.error,
+          primary: theme.colors.primary,
+          text: theme.colors.onSurface,
+        },
+      };
 
   useEffect(() => {
     async function init() {
@@ -228,8 +269,15 @@ export function AppNavigator({
   }
 
   return (
-    <NavigationContainer linking={linking} ref={navigationRef}>
-      <Stack.Navigator>
+    <NavigationContainer linking={linking} ref={navigationRef} theme={navigationTheme}>
+      <Stack.Navigator
+        screenOptions={{
+          contentStyle: { backgroundColor: theme.colors.background },
+          headerStyle: { backgroundColor: theme.colors.background, height: 52 },
+          headerTintColor: theme.colors.onSurface,
+          headerTitleStyle: { color: theme.colors.onSurface, fontSize: 18, fontWeight: '700' },
+        }}
+      >
         {!isAuthenticated ? (
           <Stack.Screen
             name="Login"

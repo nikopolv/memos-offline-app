@@ -4,6 +4,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 type IconName =
   | 'alert-circle'
+  | 'checkbox-blank-outline'
   | 'checkbox-marked-outline'
   | 'cloud-upload'
   | 'close'
@@ -39,6 +40,11 @@ const WEB_ICON_PATHS: Partial<Record<IconName, React.ReactNode>> = {
       <circle cx="12" cy="12" r="9" />
       <path d="M12 7.5v5" />
       <path d="M12 16.5h.01" />
+    </>
+  ),
+  'checkbox-blank-outline': (
+    <>
+      <rect x="4" y="4" width="16" height="16" rx="2.5" />
     </>
   ),
   'checkbox-marked-outline': (
