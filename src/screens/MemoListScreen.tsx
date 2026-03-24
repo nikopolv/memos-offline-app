@@ -6,7 +6,6 @@ import {
   RefreshControl,
 } from 'react-native';
 import {
-  useBottomTabBarHeight,
   FAB,
   Searchbar,
   Text,
@@ -19,6 +18,7 @@ import {
   Button,
   Surface,
 } from 'react-native-paper';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

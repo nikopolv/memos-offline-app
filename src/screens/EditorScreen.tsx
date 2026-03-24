@@ -1,11 +1,22 @@
-import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  Keyboard,
+  Modal,
+  Pressable,
+  LayoutChangeEvent,
+} from 'react-native';
 import {
   TextInput,
   Button,
   IconButton,
   useTheme,
   Text,
+  Surface,
 } from 'react-native-paper';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,7 +41,18 @@ export function EditorScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [customTag, setCustomTag] = useState('');
+  const [isTagSheetOpen, setIsTagSheetOpen] = useState(false);
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
+  const [dockHeight, setDockHeight] = useState(0);
+  const [footerHeight, setFooterHeight] = useState(0);
   const hydratedMemoIdRef = useRef<string | null>(null);
+  const hasVisualViewport = Platform.OS === 'web' && typeof window !== 'undefined' && 'visualViewport' in window;
+
+  const handleMeasuredHeight =
+    (setter: React.Dispatch<React.SetStateAction<number>>) => (event: LayoutChangeEvent) => {
+      const nextHeight = Math.ceil(event.nativeEvent.layout.height);
+      setter((current) => (current === nextHeight ? current : nextHeight));
+    };
 
   useEffect(() => {
     if (existingMemo) {
@@ -55,6 +77,53 @@ export function EditorScreen() {
       setHasChanges(content.trim().length > 0);
     }
   }, [content, existingMemo]);
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      if (!hasVisualViewport) {
+        return;
+      }
+
+      const viewport = window.visualViewport;
+      if (!viewport) {
+        return;
+      }
+
+      const updateViewportOffset = () => {
+        const keyboardHeight = Math.max(
+          0,
+          Math.round(window.innerHeight - viewport.height - viewport.offsetTop)
+        );
+        setKeyboardOffset(keyboardHeight > 40 ? keyboardHeight : 0);
+      };
+
+      updateViewportOffset();
+      viewport.addEventListener('resize', updateViewportOffset);
+      viewport.addEventListener('scroll', updateViewportOffset);
+      window.addEventListener('resize', updateViewportOffset);
+
+      return () => {
+        viewport.removeEventListener('resize', updateViewportOffset);
+        viewport.removeEventListener('scroll', updateViewportOffset);
+        window.removeEventListener('resize', updateViewportOffset);
+      };
+    }
+
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSubscription = Keyboard.addListener(showEvent, (event) => {
+      setKeyboardOffset(event.endCoordinates.height);
+    });
+    const hideSubscription = Keyboard.addListener(hideEvent, () => {
+      setKeyboardOffset(0);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, [hasVisualViewport]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -125,6 +194,10 @@ export function EditorScreen() {
     .slice(0, 8);
 
   const quickTags = ['#task', '#idea', '#decision', '#learning'];
+  const compactDockTags = useMemo(() => {
+    const tags = quickTags.concat(suggestedTags);
+    return Array.from(new Set(tags)).slice(0, 4);
+  }, [quickTags, suggestedTags]);
 
   const handleInsertCustomTag = () => {
     const normalizedTag = normalizeTag(customTag);
@@ -132,7 +205,18 @@ export function EditorScreen() {
 
     insertTag(normalizedTag);
     setCustomTag('');
+    setIsTagSheetOpen(false);
   };
+
+  const handleQuickTagPress = (tag: string) => {
+    insertTag(tag);
+  };
+
+  const baseBottomInset = Math.max(insets.bottom, 8);
+  const dockBottomOffset = footerHeight + baseBottomInset + keyboardOffset + 8;
+  const scrollPaddingBottom = dockHeight + footerHeight + keyboardOffset + baseBottomInset + 32;
+  const showQuickButtonOnly = Platform.OS === 'web' && !hasVisualViewport;
+  const dockPositionStyle = { position: 'absolute' } as const;
 
   return (
     <KeyboardAvoidingView
@@ -141,7 +225,7 @@ export function EditorScreen() {
     >
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: 24 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: scrollPaddingBottom }]}
         keyboardShouldPersistTaps="handled"
       >
         <TextInput
@@ -167,150 +251,68 @@ export function EditorScreen() {
         />
       </ScrollView>
 
-      <View
+      <Surface
+        onLayout={handleMeasuredHeight(setDockHeight)}
+        elevation={3}
         style={[
-          styles.toolbar,
+          styles.floatingDock,
+          dockPositionStyle,
           {
-            backgroundColor: theme.colors.elevation.level1,
-            borderTopColor: theme.colors.outlineVariant,
-            paddingBottom: Math.max(insets.bottom, 12),
+            backgroundColor: theme.colors.elevation.level2,
+            borderColor: theme.colors.outlineVariant,
+            bottom: dockBottomOffset,
           },
         ]}
       >
-        <View style={styles.customTagRow}>
-          <TextInput
-            value={customTag}
-            onChangeText={setCustomTag}
-            mode="outlined"
-            dense
-            placeholder="Add tag fast"
-            autoCapitalize="none"
-            autoCorrect={false}
-            style={[styles.customTagInput, { backgroundColor: theme.colors.surface }]}
-            onSubmitEditing={handleInsertCustomTag}
-            accessibilityLabel="Custom tag input"
-            textColor={theme.colors.onSurface}
-            outlineColor={theme.colors.outline}
-            activeOutlineColor={theme.colors.primary}
-            placeholderTextColor={theme.colors.onSurfaceVariant}
-          />
-          <Button
-            mode="contained"
-            compact
-            onPress={handleInsertCustomTag}
-            disabled={!normalizeTag(customTag)}
-            contentStyle={styles.toolbarButtonContent}
-          >
-            Add tag
-          </Button>
-        </View>
-
-        <Text variant="labelMedium" style={styles.toolbarLabel}>
-          Quick tags
-        </Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tagButtons}
+          contentContainerStyle={styles.compactDockRow}
+          keyboardShouldPersistTaps="handled"
         >
-          {quickTags.map((tag) => (
+          {showQuickButtonOnly ? (
             <Button
-              key={tag}
               mode="contained-tonal"
               compact
-              onPress={() => insertTag(tag)}
+              onPress={() => setIsTagSheetOpen(true)}
               style={styles.tagButton}
               contentStyle={styles.toolbarButtonContent}
             >
-              {tag}
+              # Tags
             </Button>
-          ))}
-        </ScrollView>
+          ) : (
+            <>
+              {compactDockTags.map((tag) => (
+                <Button
+                  key={`dock-${tag}`}
+                  mode="contained-tonal"
+                  compact
+                  onPress={() => handleQuickTagPress(tag)}
+                  style={styles.tagButton}
+                  contentStyle={styles.toolbarButtonContent}
+                >
+                  {tag}
+                </Button>
+              ))}
+            </>
+          )}
 
-        {(suggestedTags.length > 0 || currentTags.length > 0) && (
-          <>
-            <Text variant="labelMedium" style={styles.toolbarLabel}>
-              Suggested from your memos
-            </Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.tagButtons}
+          {!showQuickButtonOnly && (
+            <Button
+              mode="outlined"
+              compact
+              onPress={() => setIsTagSheetOpen(true)}
+              style={styles.moreButton}
+              contentStyle={styles.toolbarButtonContent}
             >
-              {currentTags.map((tag) => (
-                <Button
-                  key={`current-${tag}`}
-                  mode="contained"
-                  compact
-                  disabled
-                  style={styles.tagButton}
-                  contentStyle={styles.toolbarButtonContent}
-                >
-                  {tag}
-                </Button>
-              ))}
-
-              {suggestedTags.map((tag) => (
-                <Button
-                  key={tag}
-                  mode="outlined"
-                  compact
-                  onPress={() => insertTag(tag)}
-                  style={styles.tagButton}
-                  contentStyle={styles.toolbarButtonContent}
-                >
-                  {tag}
-                </Button>
-              ))}
-            </ScrollView>
-          </>
-        )}
-
-        <View style={styles.formatButtons}>
-          <IconButton
-            icon="format-bold"
-            size={20}
-            mode="contained-tonal"
-            containerColor={theme.colors.secondaryContainer}
-            iconColor={theme.colors.onSecondaryContainer}
-            onPress={() => {
-              appendToContent('**text**');
-            }}
-          />
-          <IconButton
-            icon="format-list-bulleted"
-            size={20}
-            mode="contained-tonal"
-            containerColor={theme.colors.secondaryContainer}
-            iconColor={theme.colors.onSecondaryContainer}
-            onPress={() => {
-              appendToContent('\n- ');
-            }}
-          />
-          <IconButton
-            icon="checkbox-marked-outline"
-            size={20}
-            mode="contained-tonal"
-            containerColor={theme.colors.secondaryContainer}
-            iconColor={theme.colors.onSecondaryContainer}
-            onPress={() => {
-              appendToContent('\n- [ ] ');
-            }}
-          />
-          <IconButton
-            icon="code-tags"
-            size={20}
-            mode="contained-tonal"
-            containerColor={theme.colors.secondaryContainer}
-            iconColor={theme.colors.onSecondaryContainer}
-            onPress={() => {
-              appendToContent('`code`');
-            }}
-          />
-        </View>
-      </View>
+              More
+            </Button>
+          )}
+        </ScrollView>
+      </Surface>
 
       <View
+        onLayout={handleMeasuredHeight(setFooterHeight)}
         style={[
           styles.footer,
           {
@@ -323,6 +325,169 @@ export function EditorScreen() {
           {content.length} characters
         </Text>
       </View>
+
+      <Modal
+        visible={isTagSheetOpen}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setIsTagSheetOpen(false)}
+      >
+        <Pressable
+          style={[styles.sheetBackdrop, { backgroundColor: theme.colors.backdrop }]}
+          onPress={() => setIsTagSheetOpen(false)}
+        />
+        <Surface
+          elevation={4}
+          style={[
+            styles.sheet,
+            {
+              backgroundColor: theme.colors.background,
+              paddingBottom: Math.max(insets.bottom, 16),
+            },
+          ]}
+        >
+          <View style={styles.sheetHeader}>
+            <Text variant="titleMedium">Tags</Text>
+            <Button compact onPress={() => setIsTagSheetOpen(false)}>
+              Close
+            </Button>
+          </View>
+
+          <View style={styles.customTagRow}>
+            <TextInput
+              value={customTag}
+              onChangeText={setCustomTag}
+              mode="outlined"
+              dense
+              placeholder="Add tag fast"
+              autoCapitalize="none"
+              autoCorrect={false}
+              style={[styles.customTagInput, { backgroundColor: theme.colors.surface }]}
+              onSubmitEditing={handleInsertCustomTag}
+              accessibilityLabel="Custom tag input"
+              textColor={theme.colors.onSurface}
+              outlineColor={theme.colors.outline}
+              activeOutlineColor={theme.colors.primary}
+              placeholderTextColor={theme.colors.onSurfaceVariant}
+            />
+            <Button
+              mode="contained"
+              compact
+              onPress={handleInsertCustomTag}
+              disabled={!normalizeTag(customTag)}
+              contentStyle={styles.toolbarButtonContent}
+            >
+              Add tag
+            </Button>
+          </View>
+
+          <Text variant="labelMedium" style={styles.toolbarLabel}>
+            Quick tags
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.tagButtons}
+            keyboardShouldPersistTaps="handled"
+          >
+            {quickTags.map((tag) => (
+              <Button
+                key={tag}
+                mode="contained-tonal"
+                compact
+                onPress={() => handleQuickTagPress(tag)}
+                style={styles.tagButton}
+                contentStyle={styles.toolbarButtonContent}
+              >
+                {tag}
+              </Button>
+            ))}
+          </ScrollView>
+
+          {(suggestedTags.length > 0 || currentTags.length > 0) && (
+            <>
+              <Text variant="labelMedium" style={styles.toolbarLabel}>
+                Suggested from your memos
+              </Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.tagButtons}
+                keyboardShouldPersistTaps="handled"
+              >
+                {currentTags.map((tag) => (
+                  <Button
+                    key={`current-${tag}`}
+                    mode="contained"
+                    compact
+                    disabled
+                    style={styles.tagButton}
+                    contentStyle={styles.toolbarButtonContent}
+                  >
+                    {tag}
+                  </Button>
+                ))}
+
+                {suggestedTags.map((tag) => (
+                  <Button
+                    key={tag}
+                    mode="outlined"
+                    compact
+                    onPress={() => handleQuickTagPress(tag)}
+                    style={styles.tagButton}
+                    contentStyle={styles.toolbarButtonContent}
+                  >
+                    {tag}
+                  </Button>
+                ))}
+              </ScrollView>
+            </>
+          )}
+
+          <View style={styles.formatButtons}>
+            <IconButton
+              icon="format-bold"
+              size={20}
+              mode="contained-tonal"
+              containerColor={theme.colors.secondaryContainer}
+              iconColor={theme.colors.onSecondaryContainer}
+              onPress={() => {
+                appendToContent('**text**');
+              }}
+            />
+            <IconButton
+              icon="format-list-bulleted"
+              size={20}
+              mode="contained-tonal"
+              containerColor={theme.colors.secondaryContainer}
+              iconColor={theme.colors.onSecondaryContainer}
+              onPress={() => {
+                appendToContent('\n- ');
+              }}
+            />
+            <IconButton
+              icon="checkbox-marked-outline"
+              size={20}
+              mode="contained-tonal"
+              containerColor={theme.colors.secondaryContainer}
+              iconColor={theme.colors.onSecondaryContainer}
+              onPress={() => {
+                appendToContent('\n- [ ] ');
+              }}
+            />
+            <IconButton
+              icon="code-tags"
+              size={20}
+              mode="contained-tonal"
+              containerColor={theme.colors.secondaryContainer}
+              iconColor={theme.colors.onSecondaryContainer}
+              onPress={() => {
+                appendToContent('`code`');
+              }}
+            />
+          </View>
+        </Surface>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -348,10 +513,12 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
   },
-  toolbar: {
-    borderTopWidth: 1,
-    paddingHorizontal: 8,
-    paddingTop: 10,
+  floatingDock: {
+    left: 12,
+    right: 12,
+    borderWidth: 1,
+    borderRadius: 20,
+    zIndex: 10,
   },
   customTagRow: {
     flexDirection: 'row',
@@ -371,6 +538,12 @@ const styles = StyleSheet.create({
   toolbarButtonContent: {
     minHeight: 40,
   },
+  compactDockRow: {
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
   tagButtons: {
     flexDirection: 'row',
     gap: 8,
@@ -379,6 +552,10 @@ const styles = StyleSheet.create({
   },
   tagButton: {
     borderRadius: 16,
+  },
+  moreButton: {
+    borderRadius: 16,
+    marginLeft: 'auto',
   },
   formatButtons: {
     flexDirection: 'row',
@@ -392,5 +569,20 @@ const styles = StyleSheet.create({
   },
   charCount: {
     opacity: 0.5,
+  },
+  sheetBackdrop: {
+    flex: 1,
+  },
+  sheet: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 12,
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    marginBottom: 4,
   },
 });

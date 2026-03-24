@@ -13,6 +13,7 @@
 - [x] Improve mobile ergonomics and readability with safer screen spacing, larger tap targets, and better small-screen login/editor behavior. (`src/screens/LoginScreen.tsx`, `src/screens/MemoListScreen.tsx`, `src/screens/EditorScreen.tsx`)
 - [x] Replace fragile web icon-font usage with a shared cross-platform icon renderer so list/editor/nav icons survive production web export. (`App.tsx`, `src/components/AppIcon.tsx`, `src/navigation/AppNavigator.tsx`)
 - [x] Force accessible contrast for the editor and key text inputs, and move memo-list actions clear of the bottom tab bar on mobile. (`src/screens/EditorScreen.tsx`, `src/screens/LoginScreen.tsx`, `src/screens/MemoListScreen.tsx`, `src/components/TagFilter.tsx`)
+- [x] Restore green TypeScript checks by fixing memo-list tab-bar hook imports and editor dock positioning style compatibility. (`src/screens/MemoListScreen.tsx`, `src/screens/EditorScreen.tsx`)
 
 ## Next
 - [ ] No unblocked P0/P1 UX tasks currently listed.
