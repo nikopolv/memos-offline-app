@@ -163,16 +163,9 @@ export async function fullSync(): Promise<SyncResult> {
       }
     }
 
-    // Check for deleted memos (exists locally but not on server)
-    for (const localMemo of localMemos) {
-      if (localMemo.serverId && !serverMemoMap.has(localMemo.serverId)) {
-        // Memo was deleted on server
-        if (localMemo.syncStatus === 'synced') {
-          await db.deleteMemo(localMemo.id);
-        }
-        // If local has pending changes, keep it and try to recreate
-      }
-    }
+    // Do not treat a missing memo in the pull response as a confirmed delete.
+    // The API response can be partial or scoped to a different parent, and
+    // deleting local rows here is destructive with no recovery path.
 
     return pushResult;
   } catch (error) {

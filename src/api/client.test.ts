@@ -8,16 +8,12 @@ afterEach(() => {
   global.fetch = originalFetch;
 });
 
-test('listMemos falls back from generic parent to users/1 and caches the resolved parent', async () => {
+test('listMemos uses the documented memos endpoint without a parent query', async () => {
   const requestedUrls: string[] = [];
 
   global.fetch = (async (input: string | URL | Request) => {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
     requestedUrls.push(url);
-
-    if (url.includes('parent=users%2F-')) {
-      return new Response('parent not supported', { status: 400 });
-    }
 
     return new Response(JSON.stringify({ memos: [], nextPageToken: '' }), {
       status: 200,
@@ -33,12 +29,10 @@ test('listMemos falls back from generic parent to users/1 and caches the resolve
   await client.listMemos();
   await client.listMemos('next-page');
 
-  assert.equal(requestedUrls.length, 4);
-  assert.match(requestedUrls[0], /parent=users%2F-/);
-  assert.match(requestedUrls[1], /parent=users%2F1/);
-  assert.match(requestedUrls[2], /parent=users%2F1/);
-  assert.match(requestedUrls[3], /parent=users%2F1/);
-  assert.match(requestedUrls[3], /pageToken=next-page/);
+  assert.equal(requestedUrls.length, 2);
+  assert.doesNotMatch(requestedUrls[0], /parent=/);
+  assert.doesNotMatch(requestedUrls[1], /parent=/);
+  assert.match(requestedUrls[1], /pageToken=next-page/);
 });
 
 test('deleteMemo succeeds when the API returns an empty successful response body', async () => {

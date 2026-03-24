@@ -19,16 +19,10 @@ class ApiError extends Error {
 export class MemosClient {
   private baseUrl: string;
   private token: string;
-  private memoParent: string | null;
-  private memoParentCandidates: string[];
 
   constructor(config: MemosClientConfig) {
     this.baseUrl = config.baseUrl.replace(/\/$/, ''); // Remove trailing slash
     this.token = config.token;
-    this.memoParent = config.userParent ?? null;
-    this.memoParentCandidates = Array.from(
-      new Set([config.userParent, 'users/-', 'users/1'].filter((value): value is string => Boolean(value)))
-    );
   }
 
   private async fetch<T>(
@@ -60,39 +54,12 @@ export class MemosClient {
     return JSON.parse(responseText) as T;
   }
 
-  private async resolveMemoParent(): Promise<string> {
-    if (this.memoParent) {
-      return this.memoParent;
-    }
-
-    let lastError: Error | null = null;
-
-    for (const parent of this.memoParentCandidates) {
-      try {
-        await this.listMemosWithParent(parent, undefined, 1);
-        this.memoParent = parent;
-        return parent;
-      } catch (error) {
-        if (error instanceof ApiError && [400, 403, 404].includes(error.status)) {
-          lastError = error;
-          continue;
-        }
-
-        throw error;
-      }
-    }
-
-    throw lastError ?? new Error('Unable to determine memo parent for authenticated user');
-  }
-
-  private async listMemosWithParent(
-    parent: string,
+  private async listMemosPage(
     pageToken?: string,
     pageSize = 50
   ): Promise<ApiMemoList> {
     const params = new URLSearchParams();
     params.set('pageSize', pageSize.toString());
-    params.set('parent', parent);
     if (pageToken) {
       params.set('pageToken', pageToken);
     }
@@ -104,8 +71,7 @@ export class MemosClient {
    * List memos with optional pagination
    */
   async listMemos(pageToken?: string, pageSize = 50): Promise<ApiMemoList> {
-    const parent = await this.resolveMemoParent();
-    return this.listMemosWithParent(parent, pageToken, pageSize);
+    return this.listMemosPage(pageToken, pageSize);
   }
 
   /**
