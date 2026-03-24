@@ -7,6 +7,7 @@ import {
   Divider,
   useTheme,
 } from 'react-native-paper';
+import { renderPaperIcon } from '../components';
 import { useAuthStore, useThemeStore, ThemeMode } from '../stores';
 import { useNetworkStore } from '../utils/network';
 import { getSyncStatus, fullSync } from '../sync';
@@ -88,7 +89,7 @@ export function SettingsScreen() {
         <List.Item
           title="Server"
           description={serverUrl || 'Not connected'}
-          left={(props) => <List.Icon {...props} icon="server" />}
+          left={(props) => <List.Icon {...props} icon={renderPaperIcon('server')} />}
         />
         
         <List.Item
@@ -97,7 +98,7 @@ export function SettingsScreen() {
           left={(props) => (
             <List.Icon
               {...props}
-              icon={isConnected ? 'wifi' : 'wifi-off'}
+              icon={renderPaperIcon(isConnected ? 'wifi' : 'wifi-off')}
               color={isConnected ? theme.colors.primary : theme.colors.error}
             />
           )}
@@ -116,7 +117,7 @@ export function SettingsScreen() {
               ? 'Loading sync status...'
               : `${syncStatus.pendingCount} items waiting to sync`
           }
-          left={(props) => <List.Icon {...props} icon="cloud-upload" />}
+          left={(props) => <List.Icon {...props} icon={renderPaperIcon('cloud-upload')} />}
         />
         
         {syncStatus.failedCount > 0 && (
@@ -124,7 +125,11 @@ export function SettingsScreen() {
             title="Failed Items"
             description={`${syncStatus.failedCount} items failed to sync`}
             left={(props) => (
-              <List.Icon {...props} icon="alert-circle" color={theme.colors.error} />
+              <List.Icon
+                {...props}
+                icon={renderPaperIcon('alert-circle')}
+                color={theme.colors.error}
+              />
             )}
           />
         )}
@@ -135,7 +140,7 @@ export function SettingsScreen() {
             onPress={handleSync}
             loading={isSyncing}
             disabled={isSyncing || isLoadingSyncStatus || !isConnected}
-            icon="sync"
+            icon={renderPaperIcon('sync')}
           >
             Sync Now
           </Button>
@@ -150,7 +155,7 @@ export function SettingsScreen() {
         <List.Item
           title="Theme"
           description={modeDescription[mode]}
-          left={(props) => <List.Icon {...props} icon="theme-light-dark" />}
+          left={(props) => <List.Icon {...props} icon={renderPaperIcon('theme-light-dark')} />}
         />
 
         <View style={styles.themeButtons}>
@@ -186,13 +191,13 @@ export function SettingsScreen() {
         <List.Item
           title="Version"
           description="1.0.0"
-          left={(props) => <List.Icon {...props} icon="information" />}
+          left={(props) => <List.Icon {...props} icon={renderPaperIcon('information')} />}
         />
         
         <List.Item
           title="Memos"
           description="Open-source note-taking app"
-          left={(props) => <List.Icon {...props} icon="notebook" />}
+          left={(props) => <List.Icon {...props} icon={renderPaperIcon('notebook')} />}
         />
       </List.Section>
 
@@ -203,7 +208,7 @@ export function SettingsScreen() {
           <Button
             mode="outlined"
             onPress={handleLogout}
-            icon="logout"
+            icon={renderPaperIcon('logout')}
             textColor={theme.colors.error}
           >
             Disconnect

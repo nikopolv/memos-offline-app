@@ -26,7 +26,7 @@ import { useMemoStore } from '../stores';
 import { useNetworkStore } from '../utils/network';
 import { fullSync, getSyncStatus } from '../sync';
 import { Memo } from '../types';
-import { TagFilter } from '../components';
+import { TagFilter, renderPaperIcon } from '../components';
 
 interface SyncBannerState {
   pendingCount: number;
@@ -171,8 +171,8 @@ export function MemoListScreen() {
           },
         ]}
         inputStyle={styles.searchInput}
-        icon="magnify"
-        clearIcon="close"
+        icon={renderPaperIcon('magnify')}
+        clearIcon={renderPaperIcon('close')}
         placeholderTextColor={theme.colors.onSurfaceVariant}
         accessibilityLabel="Search memos"
       />
@@ -222,7 +222,7 @@ export function MemoListScreen() {
       )}
 
       <FAB
-        icon="plus"
+        icon={renderPaperIcon('plus')}
         style={[
           styles.fab,
           {
@@ -528,7 +528,7 @@ function MemoCard({ memo, activeTag, onPress, onDelete, onTogglePin, onTagPress 
             <View style={styles.cardMeta}>
               {memo.pinned && (
                 <IconButton
-                  icon="pin"
+                  icon={renderPaperIcon('pin')}
                   size={16}
                   iconColor={theme.colors.primary}
                   style={styles.pinIcon}

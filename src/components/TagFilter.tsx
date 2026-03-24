@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { Chip, useTheme } from 'react-native-paper';
+import { renderPaperIcon } from './AppIcon';
 import { useMemoStore } from '../stores';
 
 export function TagFilter() {
@@ -50,7 +51,7 @@ export function TagFilter() {
             mode="flat"
             onPress={() => setFilterTag(null)}
             style={[styles.chip, styles.clearChip]}
-            icon="close"
+            icon={renderPaperIcon('close')}
             compact={false}
           >
             Clear

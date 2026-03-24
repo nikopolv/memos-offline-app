@@ -17,6 +17,7 @@ import {
   canSubmitLoginCredentials,
   normalizeLoginCredentials,
 } from './loginCredentials';
+import { renderPaperIcon } from '../components';
 
 const ONBOARDING_SEEN_KEY = 'memos_login_onboarding_seen_v1';
 
@@ -156,7 +157,7 @@ export function LoginScreen() {
                 secureTextEntry={!showToken}
                 right={
                   <TextInput.Icon
-                    icon={showToken ? 'eye-off' : 'eye'}
+                    icon={renderPaperIcon(showToken ? 'eye-off' : 'eye')}
                     onPress={() => setShowToken(!showToken)}
                   />
                 }

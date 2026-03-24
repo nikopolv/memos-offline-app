@@ -20,6 +20,7 @@ import {
 } from 'react-native-paper';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { renderPaperIcon } from '../components';
 import { useMemoStore } from '../stores';
 
 type EditorMode = 'create' | 'edit';
@@ -446,7 +447,7 @@ export function EditorScreen() {
 
           <View style={styles.formatButtons}>
             <IconButton
-              icon="format-bold"
+              icon={renderPaperIcon('format-bold')}
               size={20}
               mode="contained-tonal"
               containerColor={theme.colors.secondaryContainer}
@@ -456,7 +457,7 @@ export function EditorScreen() {
               }}
             />
             <IconButton
-              icon="format-list-bulleted"
+              icon={renderPaperIcon('format-list-bulleted')}
               size={20}
               mode="contained-tonal"
               containerColor={theme.colors.secondaryContainer}
@@ -466,7 +467,7 @@ export function EditorScreen() {
               }}
             />
             <IconButton
-              icon="checkbox-marked-outline"
+              icon={renderPaperIcon('checkbox-marked-outline')}
               size={20}
               mode="contained-tonal"
               containerColor={theme.colors.secondaryContainer}
@@ -476,7 +477,7 @@ export function EditorScreen() {
               }}
             />
             <IconButton
-              icon="code-tags"
+              icon={renderPaperIcon('code-tags')}
               size={20}
               mode="contained-tonal"
               containerColor={theme.colors.secondaryContainer}
