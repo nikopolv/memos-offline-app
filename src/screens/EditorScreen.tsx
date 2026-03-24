@@ -9,6 +9,8 @@ import {
   Modal,
   Pressable,
   LayoutChangeEvent,
+  NativeSyntheticEvent,
+  TextInputSelectionChangeEventData,
 } from 'react-native';
 import {
   TextInput,
@@ -24,6 +26,105 @@ import { renderPaperIcon } from '../components';
 import { useMemoStore } from '../stores';
 
 type EditorMode = 'create' | 'edit';
+type TextSelection = { start: number; end: number };
+
+function getAutoNumberedListContinuation(
+  previousContent: string,
+  nextContent: string,
+  selection: TextSelection
+) {
+  if (selection.start !== selection.end) {
+    return null;
+  }
+
+  if (nextContent.length !== previousContent.length + 1) {
+    return null;
+  }
+
+  if (nextContent[selection.start] !== '\n') {
+    return null;
+  }
+
+  if (nextContent.slice(0, selection.start) !== previousContent.slice(0, selection.start)) {
+    return null;
+  }
+
+  if (nextContent.slice(selection.start + 1) !== previousContent.slice(selection.start)) {
+    return null;
+  }
+
+  const lineStart = previousContent.lastIndexOf('\n', selection.start - 1) + 1;
+  const currentLine = previousContent.slice(lineStart, selection.start);
+  const match = currentLine.match(/^(\s*)(\d+)\.\s(.*)$/);
+
+  if (!match) {
+    return null;
+  }
+
+  const [, indentation, currentNumber] = match;
+  const nextPrefix = `${indentation}${Number(currentNumber) + 1}. `;
+  const insertionPoint = selection.start + 1;
+  const updatedContent =
+    nextContent.slice(0, insertionPoint) + nextPrefix + nextContent.slice(insertionPoint);
+  const nextSelection = {
+    start: insertionPoint + nextPrefix.length,
+    end: insertionPoint + nextPrefix.length,
+  };
+
+  return {
+    content: updatedContent,
+    selection: nextSelection,
+  };
+}
+
+function getAutoBulletListContinuation(
+  previousContent: string,
+  nextContent: string,
+  selection: TextSelection
+) {
+  if (selection.start !== selection.end) {
+    return null;
+  }
+
+  if (nextContent.length !== previousContent.length + 1) {
+    return null;
+  }
+
+  if (nextContent[selection.start] !== '\n') {
+    return null;
+  }
+
+  if (nextContent.slice(0, selection.start) !== previousContent.slice(0, selection.start)) {
+    return null;
+  }
+
+  if (nextContent.slice(selection.start + 1) !== previousContent.slice(selection.start)) {
+    return null;
+  }
+
+  const lineStart = previousContent.lastIndexOf('\n', selection.start - 1) + 1;
+  const currentLine = previousContent.slice(lineStart, selection.start);
+  const match = currentLine.match(/^(\s*)-\s(.*)$/);
+
+  if (!match) {
+    return null;
+  }
+
+  const [, indentation] = match;
+  const nextPrefix = `${indentation}- `;
+  const insertionPoint = selection.start + 1;
+  const updatedContent =
+    nextContent.slice(0, insertionPoint) + nextPrefix + nextContent.slice(insertionPoint);
+  const nextSelection = {
+    start: insertionPoint + nextPrefix.length,
+    end: insertionPoint + nextPrefix.length,
+  };
+
+  return {
+    content: updatedContent,
+    selection: nextSelection,
+  };
+}
 
 export function EditorScreen() {
   const theme = useTheme();
@@ -39,6 +140,7 @@ export function EditorScreen() {
   const existingMemo = memoId ? memos.find((m) => m.id === memoId) : undefined;
 
   const [content, setContent] = useState(existingMemo?.content || initialContent);
+  const [controlledSelection, setControlledSelection] = useState<TextSelection | undefined>();
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [customTag, setCustomTag] = useState('');
@@ -47,7 +149,21 @@ export function EditorScreen() {
   const [dockHeight, setDockHeight] = useState(0);
   const [footerHeight, setFooterHeight] = useState(0);
   const hydratedMemoIdRef = useRef<string | null>(null);
+  const selectionRef = useRef<TextSelection>({
+    start: (existingMemo?.content || initialContent).length,
+    end: (existingMemo?.content || initialContent).length,
+  });
   const hasVisualViewport = Platform.OS === 'web' && typeof window !== 'undefined' && 'visualViewport' in window;
+
+  const updateContent = (nextContent: string, nextSelection?: TextSelection) => {
+    setContent(nextContent);
+    const resolvedSelection = nextSelection ?? {
+      start: nextContent.length,
+      end: nextContent.length,
+    };
+    selectionRef.current = resolvedSelection;
+    setControlledSelection(resolvedSelection);
+  };
 
   const handleMeasuredHeight =
     (setter: React.Dispatch<React.SetStateAction<number>>) => (event: LayoutChangeEvent) => {
@@ -58,7 +174,7 @@ export function EditorScreen() {
   useEffect(() => {
     if (existingMemo) {
       if (hydratedMemoIdRef.current !== existingMemo.id) {
-        setContent(existingMemo.content);
+        updateContent(existingMemo.content);
         hydratedMemoIdRef.current = existingMemo.id;
       }
       return;
@@ -67,7 +183,7 @@ export function EditorScreen() {
     hydratedMemoIdRef.current = null;
 
     if (mode === 'create' && initialContent) {
-      setContent(initialContent);
+      updateContent(initialContent);
     }
   }, [existingMemo?.id, existingMemo?.content, mode, initialContent]);
 
@@ -160,14 +276,40 @@ export function EditorScreen() {
   };
 
   const appendToContent = (suffix: string) => {
-    setContent((current) => current + suffix);
+    updateContent(content + suffix);
   };
 
   const insertTag = (tag: string) => {
-    setContent((current) => {
-      const separator = current.endsWith(' ') || current === '' ? '' : ' ';
-      return current + separator + tag + ' ';
-    });
+    const separator = content.endsWith(' ') || content === '' ? '' : ' ';
+    updateContent(content + separator + tag + ' ');
+  };
+
+  const handleContentChange = (nextContent: string) => {
+    const continuation =
+      getAutoNumberedListContinuation(content, nextContent, selectionRef.current) ||
+      getAutoBulletListContinuation(content, nextContent, selectionRef.current);
+
+    if (continuation) {
+      updateContent(continuation.content, continuation.selection);
+      return;
+    }
+
+    setContent(nextContent);
+  };
+
+  const handleSelectionChange = (
+    event: NativeSyntheticEvent<TextInputSelectionChangeEventData>
+  ) => {
+    const nextSelection = event.nativeEvent.selection;
+    selectionRef.current = nextSelection;
+
+    if (
+      controlledSelection &&
+      controlledSelection.start === nextSelection.start &&
+      controlledSelection.end === nextSelection.end
+    ) {
+      setControlledSelection(undefined);
+    }
   };
 
   const normalizeTag = (value: string) => {
@@ -231,7 +373,9 @@ export function EditorScreen() {
       >
         <TextInput
           value={content}
-          onChangeText={setContent}
+          onChangeText={handleContentChange}
+          selection={controlledSelection}
+          onSelectionChange={handleSelectionChange}
           placeholder="Write your memo... (Markdown supported)"
           multiline
           style={[

@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useTheme } from 'react-native-paper';
 import type { ShareIntent } from 'expo-share-intent';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAuthStore } from '../stores';
 import { useNetworkStore } from '../utils/network';
@@ -15,7 +16,6 @@ import {
   EditorScreen,
   SettingsScreen,
 } from '../screens';
-import { ActivityIndicator, View } from 'react-native';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -41,6 +41,44 @@ type AppNavigatorProps = {
   sharedIntent?: ShareIntent | null;
   onSharedIntentConsumed?: () => void;
 };
+
+function EmptyScreen() {
+  return null;
+}
+
+function CreateTabButton({
+  accessibilityState,
+  onPress,
+}: {
+  accessibilityState?: { selected?: boolean };
+  onPress?: () => void;
+}) {
+  const theme = useTheme();
+  const isSelected = accessibilityState?.selected ?? false;
+
+  return (
+    <Pressable
+      accessibilityLabel="Create memo"
+      accessibilityRole="button"
+      onPress={onPress}
+      style={styles.createTabPressable}
+    >
+      <View
+        style={[
+          styles.createTabButton,
+          {
+            backgroundColor: theme.colors.primary,
+            shadowColor: theme.colors.shadow,
+          },
+          isSelected ? styles.createTabButtonSelected : undefined,
+        ]}
+      >
+        <AppIcon name="plus" size={24} color={theme.colors.onPrimary} />
+      </View>
+      <Text style={[styles.createTabLabel, { color: theme.colors.onSurfaceVariant }]}>New</Text>
+    </Pressable>
+  );
+}
 
 function MainTabs() {
   const theme = useTheme();
@@ -79,6 +117,26 @@ function MainTabs() {
         }}
       />
       <Tab.Screen
+        name="CreateMemo"
+        component={EmptyScreen}
+        listeners={({ navigation }) => ({
+          tabPress: (event) => {
+            event.preventDefault();
+            navigation.navigate('Editor', { mode: 'create' });
+          },
+        })}
+        options={{
+          title: 'New',
+          headerShown: false,
+          tabBarButton: (props) => (
+            <CreateTabButton
+              accessibilityState={props.accessibilityState}
+              onPress={props.onPress}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
         name="Settings"
         component={SettingsScreen}
         options={{
@@ -90,6 +148,34 @@ function MainTabs() {
     </Tab.Navigator>
   );
 }
+
+const styles = StyleSheet.create({
+  createTabPressable: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+    marginTop: -10,
+  },
+  createTabButton: {
+    alignItems: 'center',
+    borderRadius: 24,
+    elevation: 4,
+    height: 48,
+    justifyContent: 'center',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.24,
+    shadowRadius: 10,
+    width: 48,
+  },
+  createTabButtonSelected: {
+    transform: [{ scale: 0.98 }],
+  },
+  createTabLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+});
 
 export function AppNavigator({
   sharedIntent = null,

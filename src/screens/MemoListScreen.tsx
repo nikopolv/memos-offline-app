@@ -6,7 +6,6 @@ import {
   RefreshControl,
 } from 'react-native';
 import {
-  FAB,
   Searchbar,
   Text,
   Card,
@@ -21,7 +20,6 @@ import {
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Swipeable } from 'react-native-gesture-handler';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMemoStore } from '../stores';
 import { useNetworkStore } from '../utils/network';
 import { fullSync, getSyncStatus } from '../sync';
@@ -36,7 +34,6 @@ interface SyncBannerState {
 
 export function MemoListScreen() {
   const theme = useTheme();
-  const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
   const navigation = useNavigation<any>();
   const {
@@ -143,8 +140,7 @@ export function MemoListScreen() {
 
   const filteredMemos = getFilteredMemos();
   const showInitialSkeleton = isLoading && memos.length === 0;
-  const listBottomPadding = tabBarHeight + insets.bottom + 104;
-  const fabBottom = tabBarHeight + 20;
+  const listBottomPadding = tabBarHeight + 36;
 
   const renderMemoItem = ({ item }: { item: Memo }) => (
     <MemoCard
@@ -220,20 +216,6 @@ export function MemoListScreen() {
           }
         />
       )}
-
-      <FAB
-        icon={renderPaperIcon('plus')}
-        style={[
-          styles.fab,
-          {
-            backgroundColor: theme.colors.primaryContainer,
-            bottom: fabBottom,
-          },
-        ]}
-        color={theme.colors.onPrimaryContainer}
-        onPress={handleCreateMemo}
-        accessibilityLabel="Create memo"
-      />
 
       <Snackbar
         visible={Boolean(error)}
@@ -667,12 +649,6 @@ const styles = StyleSheet.create({
     width: 64,
     height: 24,
     borderRadius: 999,
-  },
-  fab: {
-    position: 'absolute',
-    margin: 16,
-    right: 0,
-    bottom: 0,
   },
   card: {
     marginBottom: 12,
