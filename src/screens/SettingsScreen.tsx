@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
 import {
   List,
   Button,
@@ -65,12 +65,26 @@ export function SettingsScreen() {
   };
 
   const handleLogout = () => {
+    if (Platform.OS === 'web') {
+      const confirmed =
+        typeof window === 'undefined'
+          ? true
+          : window.confirm(
+              'Are you sure you want to disconnect? Your local memos will be preserved.'
+            );
+
+      if (confirmed) {
+        void logout();
+      }
+      return;
+    }
+
     Alert.alert(
       'Logout',
       'Are you sure you want to disconnect? Your local memos will be preserved.',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Logout', style: 'destructive', onPress: logout },
+        { text: 'Logout', style: 'destructive', onPress: () => void logout() },
       ]
     );
   };
