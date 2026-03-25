@@ -1,4 +1,4 @@
-import { ApiMemo, ApiMemoList, MemoCreate, MemoVisibility } from '../types';
+import { ApiCurrentUser, ApiMemo, ApiMemoList, MemoCreate, MemoVisibility } from '../types';
 
 export interface MemosClientConfig {
   baseUrl: string;
@@ -56,38 +56,76 @@ export class MemosClient {
 
   private async listMemosPage(
     pageToken?: string,
-    pageSize = 50
+    pageSize = 50,
+    filter?: string
   ): Promise<ApiMemoList> {
     const params = new URLSearchParams();
     params.set('pageSize', pageSize.toString());
     if (pageToken) {
       params.set('pageToken', pageToken);
     }
+    if (filter) {
+      params.set('filter', filter);
+    }
 
     return this.fetch<ApiMemoList>(`/api/v1/memos?${params.toString()}`);
+  }
+
+  async getCurrentUser(): Promise<ApiCurrentUser['user']> {
+    const response = await this.fetch<ApiCurrentUser>('/api/v1/auth/me');
+    return response.user;
   }
 
   /**
    * List memos with optional pagination
    */
-  async listMemos(pageToken?: string, pageSize = 50): Promise<ApiMemoList> {
-    return this.listMemosPage(pageToken, pageSize);
+  async listMemos(pageToken?: string, pageSize = 50, filter?: string): Promise<ApiMemoList> {
+    return this.listMemosPage(pageToken, pageSize, filter);
   }
 
   /**
    * Get all memos (handles pagination automatically)
    */
   async getAllMemos(): Promise<ApiMemo[]> {
-    const allMemos: ApiMemo[] = [];
-    let pageToken: string | undefined;
+    const collectAllPages = async (filter?: string): Promise<ApiMemo[]> => {
+      const allMemos: ApiMemo[] = [];
+      let pageToken: string | undefined;
 
-    do {
-      const response = await this.listMemos(pageToken);
-      allMemos.push(...response.memos);
-      pageToken = response.nextPageToken;
-    } while (pageToken);
+      do {
+        const response = await this.listMemos(pageToken, 50, filter);
+        allMemos.push(...response.memos);
+        pageToken = response.nextPageToken;
+      } while (pageToken);
 
-    return allMemos;
+      return allMemos;
+    };
+
+    const defaultMemos = await collectAllPages();
+    if (defaultMemos.length > 0) {
+      return defaultMemos;
+    }
+
+    const currentUser = await this.getCurrentUser();
+    const creatorFilters = new Set<string>();
+    creatorFilters.add(`creator == "${currentUser.name}"`);
+
+    const numericIdMatch = currentUser.name.match(/^users\/(\d+)$/);
+    if (numericIdMatch) {
+      creatorFilters.add(`creator_id == ${numericIdMatch[1]}`);
+    }
+
+    for (const filter of creatorFilters) {
+      try {
+        const filteredMemos = await collectAllPages(filter);
+        if (filteredMemos.length > 0) {
+          return filteredMemos;
+        }
+      } catch {
+        // Ignore filter incompatibilities and try the next fallback.
+      }
+    }
+
+    return defaultMemos;
   }
 
   /**

@@ -57,6 +57,21 @@ export interface ApiMemoList {
   nextPageToken?: string;
 }
 
+export interface ApiCurrentUser {
+  user: {
+    name: string;
+    role: string;
+    username: string;
+    email?: string;
+    displayName?: string;
+    avatarUrl?: string;
+    description?: string;
+    state: string;
+    createTime: string;
+    updateTime: string;
+  };
+}
+
 // Tag type
 export interface Tag {
   id: number;
