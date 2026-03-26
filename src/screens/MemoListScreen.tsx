@@ -58,6 +58,7 @@ export function MemoListScreen() {
     failedCount: 0,
     errorMessage: null,
   });
+  const attemptedBootstrapSyncRef = React.useRef(false);
 
   const refreshSyncBanner = useCallback(async (errorMessage?: string | null) => {
     const status = await getSyncStatus();
@@ -190,6 +191,25 @@ export function MemoListScreen() {
       ),
     });
   }, [navigation, syncAction, syncIconColor, syncIconName, syncLabel]);
+
+  useEffect(() => {
+    if (memos.length > 0) {
+      attemptedBootstrapSyncRef.current = false;
+      return;
+    }
+
+    if (
+      attemptedBootstrapSyncRef.current ||
+      isLoading ||
+      isSyncing ||
+      !isConnected
+    ) {
+      return;
+    }
+
+    attemptedBootstrapSyncRef.current = true;
+    void runSync();
+  }, [isConnected, isLoading, isSyncing, memos.length, runSync]);
 
   const renderMemoItem = ({ item }: { item: Memo }) => (
     <MemoCard

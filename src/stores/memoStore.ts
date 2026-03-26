@@ -12,8 +12,8 @@ interface MemoState {
 
   // Actions
   loadMemos: () => Promise<void>;
-  createMemo: (content: string) => Promise<Memo>;
-  updateMemo: (id: string, content: string) => Promise<void>;
+  createMemo: (content: string, pinned?: boolean) => Promise<Memo>;
+  updateMemo: (id: string, content: string, pinned?: boolean) => Promise<void>;
   deleteMemo: (id: string) => Promise<void>;
   togglePin: (id: string) => Promise<void>;
   setSearchQuery: (query: string) => void;
@@ -46,12 +46,12 @@ export const useMemoStore = create<MemoState>((set, get) => ({
     }
   },
 
-  createMemo: async (content: string) => {
+  createMemo: async (content: string, pinned = false) => {
     try {
       const memo = await db.insertMemo({
         content,
         visibility: 'PRIVATE',
-        pinned: false,
+        pinned,
         syncStatus: 'pending',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -72,15 +72,25 @@ export const useMemoStore = create<MemoState>((set, get) => ({
     }
   },
 
-  updateMemo: async (id: string, content: string) => {
+  updateMemo: async (id: string, content: string, pinned?: boolean) => {
     try {
-      await db.updateMemo(id, { content, syncStatus: 'pending' });
-      await db.addToSyncQueue(id, 'update');
+      const memo = get().memos.find((m) => m.id === id);
+      if (!memo) return;
+
+      const nextPinned = pinned ?? memo.pinned;
+      await db.updateMemo(id, { content, pinned: nextPinned, syncStatus: 'pending' });
+      await db.addToSyncQueue(id, memo.serverId ? 'update' : 'create');
 
       set((state) => ({
         memos: state.memos.map((m) =>
           m.id === id
-            ? { ...m, content, updatedAt: new Date().toISOString(), syncStatus: 'pending' as const }
+            ? {
+                ...m,
+                content,
+                pinned: nextPinned,
+                updatedAt: new Date().toISOString(),
+                syncStatus: 'pending' as const,
+              }
             : m
         ),
       }));
@@ -119,10 +129,7 @@ export const useMemoStore = create<MemoState>((set, get) => ({
 
       const newPinned = !memo.pinned;
       await db.updateMemo(id, { pinned: newPinned, syncStatus: 'pending' });
-      
-      if (memo.serverId) {
-        await db.addToSyncQueue(id, 'update');
-      }
+      await db.addToSyncQueue(id, memo.serverId ? 'update' : 'create');
 
       set((state) => ({
         memos: state.memos.map((m) =>

@@ -22,7 +22,7 @@ import {
 } from 'react-native-paper';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { renderPaperIcon } from '../components';
+import { AppIcon, renderPaperIcon } from '../components';
 import { useMemoStore } from '../stores';
 
 type EditorMode = 'create' | 'edit';
@@ -142,6 +142,7 @@ export function EditorScreen() {
   const [content, setContent] = useState(existingMemo?.content || initialContent);
   const [controlledSelection, setControlledSelection] = useState<TextSelection | undefined>();
   const [isSaving, setIsSaving] = useState(false);
+  const [isPinned, setIsPinned] = useState(existingMemo?.pinned ?? false);
   const [hasChanges, setHasChanges] = useState(false);
   const [customTag, setCustomTag] = useState('');
   const [isTagSheetOpen, setIsTagSheetOpen] = useState(false);
@@ -175,12 +176,14 @@ export function EditorScreen() {
     if (existingMemo) {
       if (hydratedMemoIdRef.current !== existingMemo.id) {
         updateContent(existingMemo.content);
+        setIsPinned(existingMemo.pinned);
         hydratedMemoIdRef.current = existingMemo.id;
       }
       return;
     }
 
     hydratedMemoIdRef.current = null;
+    setIsPinned(false);
 
     if (mode === 'create' && initialContent) {
       updateContent(initialContent);
@@ -189,11 +192,11 @@ export function EditorScreen() {
 
   useEffect(() => {
     if (existingMemo) {
-      setHasChanges(content !== existingMemo.content);
+      setHasChanges(content !== existingMemo.content || isPinned !== existingMemo.pinned);
     } else {
-      setHasChanges(content.trim().length > 0);
+      setHasChanges(content.trim().length > 0 || isPinned);
     }
-  }, [content, existingMemo]);
+  }, [content, existingMemo, isPinned]);
 
   useEffect(() => {
     if (Platform.OS === 'web') {
@@ -245,17 +248,35 @@ export function EditorScreen() {
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <Button
-          mode="text"
-          onPress={handleSave}
-          disabled={!hasChanges || isSaving}
-          loading={isSaving}
-        >
-          Save
-        </Button>
+        <View style={styles.headerActions}>
+          <Pressable
+            accessibilityLabel={isPinned ? 'Unpin memo' : 'Pin memo'}
+            accessibilityRole="button"
+            hitSlop={8}
+            onPress={() => setIsPinned((current) => !current)}
+            style={({ pressed }) => [
+              styles.headerPinButton,
+              { opacity: pressed ? 0.72 : 1 },
+            ]}
+          >
+            <AppIcon
+              name="pin"
+              size={18}
+              color={isPinned ? theme.colors.primary : theme.colors.onSurfaceVariant}
+            />
+          </Pressable>
+          <Button
+            mode="text"
+            onPress={handleSave}
+            disabled={!hasChanges || isSaving}
+            loading={isSaving}
+          >
+            Save
+          </Button>
+        </View>
       ),
     });
-  }, [navigation, hasChanges, isSaving]);
+  }, [navigation, hasChanges, isPinned, isSaving, theme.colors.onSurfaceVariant, theme.colors.primary]);
 
   const handleSave = async () => {
     if (!content.trim()) return;
@@ -263,9 +284,9 @@ export function EditorScreen() {
     setIsSaving(true);
     try {
       if (mode === 'edit' && memoId) {
-        await updateMemo(memoId, content);
+        await updateMemo(memoId, content, isPinned);
       } else {
-        await createMemo(content);
+        await createMemo(content, isPinned);
       }
       navigation.goBack();
     } catch (error) {
@@ -640,6 +661,18 @@ export function EditorScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  headerActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 2,
+  },
+  headerPinButton: {
+    alignItems: 'center',
+    borderRadius: 999,
+    height: 32,
+    justifyContent: 'center',
+    width: 32,
   },
   scrollView: {
     flex: 1,
