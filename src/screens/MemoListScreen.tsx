@@ -429,6 +429,9 @@ function MemoCardSkeleton() {
 
 function MemoCard({ memo, activeTag, onPress, onDelete, onTogglePin, onTagPress }: MemoCardProps) {
   const theme = useTheme();
+  const swipeableRef = React.useRef<Swipeable | null>(null);
+  const swipeGestureActiveRef = React.useRef(false);
+  const [isSwipeOpen, setIsSwipeOpen] = React.useState(false);
 
   // Extract tags from content
   const tags = memo.content.match(/#\w+/g) || [];
@@ -439,7 +442,10 @@ function MemoCard({ memo, activeTag, onPress, onDelete, onTogglePin, onTagPress 
         mode="contained-tonal"
         compact
         style={styles.swipeButton}
-        onPress={onTogglePin}
+        onPress={() => {
+          swipeableRef.current?.close();
+          onTogglePin();
+        }}
       >
         {memo.pinned ? 'Unpin' : 'Pin'}
       </Button>
@@ -449,7 +455,10 @@ function MemoCard({ memo, activeTag, onPress, onDelete, onTogglePin, onTagPress 
         buttonColor={theme.colors.error}
         textColor={theme.colors.onError}
         style={styles.swipeButton}
-        onPress={onDelete}
+        onPress={() => {
+          swipeableRef.current?.close();
+          onDelete();
+        }}
       >
         Delete
       </Button>
@@ -457,8 +466,34 @@ function MemoCard({ memo, activeTag, onPress, onDelete, onTogglePin, onTagPress 
   );
 
   return (
-    <Swipeable renderRightActions={renderRightActions} overshootRight={false}>
-      <Card style={styles.card} onPress={onPress}>
+    <Swipeable
+      ref={swipeableRef}
+      renderRightActions={renderRightActions}
+      overshootRight={false}
+      onSwipeableWillOpen={() => {
+        swipeGestureActiveRef.current = true;
+        setIsSwipeOpen(true);
+      }}
+      onSwipeableWillClose={() => {
+        swipeGestureActiveRef.current = true;
+      }}
+      onSwipeableClose={() => {
+        setTimeout(() => {
+          swipeGestureActiveRef.current = false;
+          setIsSwipeOpen(false);
+        }, 0);
+      }}
+    >
+      <Card
+        style={styles.card}
+        onPress={() => {
+          if (isSwipeOpen || swipeGestureActiveRef.current) {
+            return;
+          }
+
+          onPress();
+        }}
+      >
         <Card.Content>
           <View style={styles.cardHeader}>
             <View style={styles.cardMeta}>
@@ -478,7 +513,7 @@ function MemoCard({ memo, activeTag, onPress, onDelete, onTogglePin, onTagPress 
             </View>
           </View>
 
-          <MarkdownPreview content={memo.content} maxCharacters={260} maxLines={8} />
+          <MarkdownPreview content={memo.content} />
 
           {tags.length > 0 && (
             <View style={styles.tagsContainer}>

@@ -231,11 +231,15 @@ function MarkdownInlineText({ text }: { text: string }) {
 
 export function MarkdownPreview({
   content,
-  maxCharacters = 260,
-  maxLines = 8,
+  maxCharacters,
+  maxLines,
 }: MarkdownPreviewProps) {
   const theme = useTheme();
-  const preview = truncateMarkdown(stripTagsForPreview(content), maxCharacters, maxLines);
+  const normalizedContent = stripTagsForPreview(content);
+  const preview =
+    typeof maxCharacters === 'number' && typeof maxLines === 'number'
+      ? truncateMarkdown(normalizedContent, maxCharacters, maxLines)
+      : normalizedContent;
   const lines = preview.split('\n');
   const renderedRows: React.ReactNode[] = [];
   let inCodeBlock = false;
