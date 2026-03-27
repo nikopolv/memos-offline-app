@@ -31,6 +31,27 @@ interface SyncBannerState {
   errorMessage: string | null;
 }
 
+function toggleTaskCheckbox(content: string, lineIndex: number) {
+  const lines = content.split('\n');
+  const targetLine = lines[lineIndex];
+
+  if (typeof targetLine !== 'string') {
+    return content;
+  }
+
+  const updatedLine = targetLine.replace(
+    /^(\s*[-*+]\s+\[)( |x|X)(\]\s+.*)$/,
+    (_, start: string, checked: string, end: string) => `${start}${checked.trim().toLowerCase() === 'x' ? ' ' : 'x'}${end}`
+  );
+
+  if (updatedLine === targetLine) {
+    return content;
+  }
+
+  lines[lineIndex] = updatedLine;
+  return lines.join('\n');
+}
+
 export function MemoListScreen() {
   const theme = useTheme();
   const tabBarHeight = useBottomTabBarHeight();
@@ -48,6 +69,7 @@ export function MemoListScreen() {
     togglePin,
     error,
     clearError,
+    updateMemo,
   } = useMemoStore();
   const { isConnected } = useNetworkStore();
   const [refreshing, setRefreshing] = React.useState(false);
@@ -138,6 +160,20 @@ export function MemoListScreen() {
     navigation.navigate('Editor', { mode: 'edit', memoId: memo.id });
   };
 
+  const handleToggleTask = useCallback(
+    async (memo: Memo, lineIndex: number) => {
+      const nextContent = toggleTaskCheckbox(memo.content, lineIndex);
+
+      if (nextContent === memo.content) {
+        return;
+      }
+
+      await updateMemo(memo.id, nextContent, memo.pinned);
+      await refreshSyncBanner();
+    },
+    [refreshSyncBanner, updateMemo]
+  );
+
   const filteredMemos = getFilteredMemos();
   const showInitialSkeleton = isLoading && memos.length === 0;
   const listBottomPadding = tabBarHeight + 36;
@@ -218,6 +254,7 @@ export function MemoListScreen() {
       onPress={() => handleEditMemo(item)}
       onDelete={() => deleteMemo(item.id)}
       onTogglePin={() => togglePin(item.id)}
+      onToggleTask={(lineIndex) => void handleToggleTask(item, lineIndex)}
       onTagPress={setFilterTag}
     />
   );
@@ -304,6 +341,7 @@ interface MemoCardProps {
   onPress: () => void;
   onDelete: () => void;
   onTogglePin: () => void;
+  onToggleTask: (lineIndex: number) => void;
   onTagPress: (tag: string | null) => void;
 }
 
@@ -427,10 +465,19 @@ function MemoCardSkeleton() {
   );
 }
 
-function MemoCard({ memo, activeTag, onPress, onDelete, onTogglePin, onTagPress }: MemoCardProps) {
+function MemoCard({
+  memo,
+  activeTag,
+  onPress,
+  onDelete,
+  onTogglePin,
+  onToggleTask,
+  onTagPress,
+}: MemoCardProps) {
   const theme = useTheme();
   const swipeableRef = React.useRef<Swipeable | null>(null);
   const swipeGestureActiveRef = React.useRef(false);
+  const taskToggleActiveRef = React.useRef(false);
   const [isSwipeOpen, setIsSwipeOpen] = React.useState(false);
 
   // Extract tags from content
@@ -465,6 +512,15 @@ function MemoCard({ memo, activeTag, onPress, onDelete, onTogglePin, onTagPress 
     </View>
   );
 
+  const handleToggleTask = (lineIndex: number) => {
+    taskToggleActiveRef.current = true;
+    onToggleTask(lineIndex);
+
+    setTimeout(() => {
+      taskToggleActiveRef.current = false;
+    }, 0);
+  };
+
   return (
     <Swipeable
       ref={swipeableRef}
@@ -487,7 +543,7 @@ function MemoCard({ memo, activeTag, onPress, onDelete, onTogglePin, onTagPress 
       <Card
         style={styles.card}
         onPress={() => {
-          if (isSwipeOpen || swipeGestureActiveRef.current) {
+          if (isSwipeOpen || swipeGestureActiveRef.current || taskToggleActiveRef.current) {
             return;
           }
 
@@ -513,7 +569,7 @@ function MemoCard({ memo, activeTag, onPress, onDelete, onTogglePin, onTagPress 
             </View>
           </View>
 
-          <MarkdownPreview content={memo.content} />
+          <MarkdownPreview content={memo.content} onToggleTask={handleToggleTask} />
 
           {tags.length > 0 && (
             <View style={styles.tagsContainer}>

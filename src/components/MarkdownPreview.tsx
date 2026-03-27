@@ -1,5 +1,5 @@
 import React from 'react';
-import { Linking, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { AppIcon } from './AppIcon';
 
@@ -7,6 +7,7 @@ type MarkdownPreviewProps = {
   content: string;
   maxCharacters?: number;
   maxLines?: number;
+  onToggleTask?: (lineIndex: number) => void;
 };
 
 type InlineNode =
@@ -233,6 +234,7 @@ export function MarkdownPreview({
   content,
   maxCharacters,
   maxLines,
+  onToggleTask,
 }: MarkdownPreviewProps) {
   const theme = useTheme();
   const normalizedContent = stripTagsForPreview(content);
@@ -338,13 +340,20 @@ export function MarkdownPreview({
           key={`task-${index}`}
           style={[styles.row, { paddingLeft: Math.min(indent.length * 8, 24) }]}
         >
-          <View style={styles.rowIcon}>
+          <Pressable
+            accessibilityLabel={checked.toLowerCase() === 'x' ? 'Uncheck task' : 'Check task'}
+            accessibilityRole={onToggleTask ? 'button' : 'none'}
+            disabled={!onToggleTask}
+            hitSlop={6}
+            onPress={() => onToggleTask?.(index)}
+            style={styles.rowIcon}
+          >
             <AppIcon
               name={checked.toLowerCase() === 'x' ? 'checkbox-marked-outline' : 'checkbox-blank-outline'}
               size={18}
               color={theme.colors.onSurfaceVariant}
             />
-          </View>
+          </Pressable>
           <View style={styles.rowContent}>
             <MarkdownInlineText text={text} />
           </View>
