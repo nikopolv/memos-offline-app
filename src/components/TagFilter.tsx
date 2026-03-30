@@ -51,6 +51,7 @@ export function TagFilter() {
             mode="flat"
             onPress={() => setFilterTag(null)}
             style={[styles.chip, styles.clearChip]}
+            textStyle={styles.chipText}
             icon={renderPaperIcon('close')}
             compact={false}
           >
@@ -73,6 +74,7 @@ export function TagFilter() {
                 styles.chip,
                 isSelected && { backgroundColor: theme.colors.primaryContainer },
               ]}
+              textStyle={styles.chipText}
             >
               {tag} ({count})
             </Chip>
@@ -94,8 +96,14 @@ const styles = StyleSheet.create({
   },
   chip: {
     marginRight: 4,
-    minHeight: 40,
+    minHeight: 44,
+    borderRadius: 999,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  chipText: {
+    textAlign: 'center',
+    alignSelf: 'center',
   },
   clearChip: {
     marginRight: 8,

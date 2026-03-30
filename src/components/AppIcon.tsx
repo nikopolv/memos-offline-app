@@ -4,6 +4,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 type IconName =
   | 'alert-circle'
+  | 'attachment'
   | 'checkbox-blank-outline'
   | 'checkbox-marked-outline'
   | 'cloud-upload'
@@ -17,7 +18,9 @@ type IconName =
   | 'information'
   | 'logout'
   | 'magnify'
+  | 'memo-link'
   | 'notebook'
+  | 'pound'
   | 'pin'
   | 'plus'
   | 'server'
@@ -40,6 +43,11 @@ const WEB_ICON_PATHS: Partial<Record<IconName, React.ReactNode>> = {
       <circle cx="12" cy="12" r="9" />
       <path d="M12 7.5v5" />
       <path d="M12 16.5h.01" />
+    </>
+  ),
+  attachment: (
+    <>
+      <path d="M9.5 12.5 15 7a3 3 0 1 1 4.2 4.2l-8.1 8.1a5 5 0 1 1-7.1-7.1L12.1 4" />
     </>
   ),
   'checkbox-blank-outline': (
@@ -190,6 +198,21 @@ const WEB_ICON_PATHS: Partial<Record<IconName, React.ReactNode>> = {
       <path d="M7 12a8 8 0 0 1 4.3-1.3" />
       <path d="M10 15a4 4 0 0 1 1.6-.3" />
       <circle cx="12" cy="18" r="1.2" fill="currentColor" stroke="none" />
+    </>
+  ),
+  'memo-link': (
+    <>
+      <path d="M10 8.5 8 6.5a3.2 3.2 0 0 0-4.5 4.5l2.5 2.5a3.2 3.2 0 0 0 4.5 0l1-1" />
+      <path d="m14 15.5 2 2a3.2 3.2 0 1 0 4.5-4.5L18 10.5a3.2 3.2 0 0 0-4.5 0l-1 1" />
+      <path d="m9 15 6-6" />
+    </>
+  ),
+  pound: (
+    <>
+      <path d="M9 4 7 20" />
+      <path d="M17 4 15 20" />
+      <path d="M4 9h16" />
+      <path d="M3 15h16" />
     </>
   ),
 };

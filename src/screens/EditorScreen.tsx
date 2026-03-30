@@ -126,6 +126,55 @@ function getAutoBulletListContinuation(
   };
 }
 
+function getAutoTaskListContinuation(
+  previousContent: string,
+  nextContent: string,
+  selection: TextSelection
+) {
+  if (selection.start !== selection.end) {
+    return null;
+  }
+
+  if (nextContent.length !== previousContent.length + 1) {
+    return null;
+  }
+
+  if (nextContent[selection.start] !== '\n') {
+    return null;
+  }
+
+  if (nextContent.slice(0, selection.start) !== previousContent.slice(0, selection.start)) {
+    return null;
+  }
+
+  if (nextContent.slice(selection.start + 1) !== previousContent.slice(selection.start)) {
+    return null;
+  }
+
+  const lineStart = previousContent.lastIndexOf('\n', selection.start - 1) + 1;
+  const currentLine = previousContent.slice(lineStart, selection.start);
+  const match = currentLine.match(/^(\s*)-\s\[(?: |x|X)\]\s(.*)$/);
+
+  if (!match) {
+    return null;
+  }
+
+  const [, indentation] = match;
+  const nextPrefix = `${indentation}- [ ] `;
+  const insertionPoint = selection.start + 1;
+  const updatedContent =
+    nextContent.slice(0, insertionPoint) + nextPrefix + nextContent.slice(insertionPoint);
+  const nextSelection = {
+    start: insertionPoint + nextPrefix.length,
+    end: insertionPoint + nextPrefix.length,
+  };
+
+  return {
+    content: updatedContent,
+    selection: nextSelection,
+  };
+}
+
 export function EditorScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -164,6 +213,24 @@ export function EditorScreen() {
     };
     selectionRef.current = resolvedSelection;
     setControlledSelection(resolvedSelection);
+  };
+
+  const insertSnippet = (snippet: string, cursorOffset = snippet.length) => {
+    const { start, end } = selectionRef.current;
+    const nextContent = content.slice(0, start) + snippet + content.slice(end);
+    const nextCursor = start + cursorOffset;
+
+    updateContent(nextContent, {
+      start: nextCursor,
+      end: nextCursor,
+    });
+  };
+
+  const insertLinePrefix = (prefix: string) => {
+    const { start, end } = selectionRef.current;
+    const needsLeadingNewline = start > 0 && content[start - 1] !== '\n';
+    const snippet = `${needsLeadingNewline ? '\n' : ''}${prefix}`;
+    insertSnippet(snippet);
   };
 
   const handleMeasuredHeight =
@@ -297,7 +364,7 @@ export function EditorScreen() {
   };
 
   const appendToContent = (suffix: string) => {
-    updateContent(content + suffix);
+    insertSnippet(suffix);
   };
 
   const insertTag = (tag: string) => {
@@ -308,6 +375,7 @@ export function EditorScreen() {
   const handleContentChange = (nextContent: string) => {
     const continuation =
       getAutoNumberedListContinuation(content, nextContent, selectionRef.current) ||
+      getAutoTaskListContinuation(content, nextContent, selectionRef.current) ||
       getAutoBulletListContinuation(content, nextContent, selectionRef.current);
 
     if (continuation) {
@@ -376,6 +444,28 @@ export function EditorScreen() {
     insertTag(tag);
   };
 
+  const handleInsertCheckbox = () => {
+    insertLinePrefix('- [ ] ');
+  };
+
+  const handleInsertCodeBlock = () => {
+    const { start } = selectionRef.current;
+    const needsLeadingNewline = start > 0 && content[start - 1] !== '\n';
+    const snippet = `${needsLeadingNewline ? '\n' : ''}\`\`\`\n\n\`\`\``;
+    const cursorOffset = (needsLeadingNewline ? 1 : 0) + 4;
+    insertSnippet(snippet, cursorOffset);
+  };
+
+  const handleInsertAttachment = () => {
+    const snippet = '![attachment](https://)';
+    insertSnippet(snippet, snippet.indexOf('https://') + 'https://'.length);
+  };
+
+  const handleInsertMemoLink = () => {
+    const snippet = '![[memo]]';
+    insertSnippet(snippet, 3);
+  };
+
   const baseBottomInset = Math.max(insets.bottom, 8);
   const dockBottomOffset = footerHeight + baseBottomInset + keyboardOffset + 8;
   const scrollPaddingBottom = dockHeight + footerHeight + keyboardOffset + baseBottomInset + 32;
@@ -436,6 +526,54 @@ export function EditorScreen() {
           contentContainerStyle={styles.compactDockRow}
           keyboardShouldPersistTaps="handled"
         >
+          <View style={styles.composeActionGroup}>
+            <IconButton
+              icon={renderPaperIcon('pound')}
+              size={20}
+              mode="contained-tonal"
+              containerColor={theme.colors.secondaryContainer}
+              iconColor={theme.colors.onSecondaryContainer}
+              onPress={() => setIsTagSheetOpen(true)}
+              accessibilityLabel="Insert tag"
+            />
+            <IconButton
+              icon={renderPaperIcon('checkbox-marked-outline')}
+              size={20}
+              mode="contained-tonal"
+              containerColor={theme.colors.secondaryContainer}
+              iconColor={theme.colors.onSecondaryContainer}
+              onPress={handleInsertCheckbox}
+              accessibilityLabel="Insert checkbox"
+            />
+            <IconButton
+              icon={renderPaperIcon('code-tags')}
+              size={20}
+              mode="contained-tonal"
+              containerColor={theme.colors.secondaryContainer}
+              iconColor={theme.colors.onSecondaryContainer}
+              onPress={handleInsertCodeBlock}
+              accessibilityLabel="Insert code block"
+            />
+            <IconButton
+              icon={renderPaperIcon('attachment')}
+              size={20}
+              mode="contained-tonal"
+              containerColor={theme.colors.secondaryContainer}
+              iconColor={theme.colors.onSecondaryContainer}
+              onPress={handleInsertAttachment}
+              accessibilityLabel="Insert attachment"
+            />
+            <IconButton
+              icon={renderPaperIcon('memo-link')}
+              size={20}
+              mode="contained-tonal"
+              containerColor={theme.colors.secondaryContainer}
+              iconColor={theme.colors.onSecondaryContainer}
+              onPress={handleInsertMemoLink}
+              accessibilityLabel="Insert memo link"
+            />
+          </View>
+
           {showQuickButtonOnly ? (
             <Button
               mode="contained-tonal"
@@ -638,7 +776,7 @@ export function EditorScreen() {
               containerColor={theme.colors.secondaryContainer}
               iconColor={theme.colors.onSecondaryContainer}
               onPress={() => {
-                appendToContent('\n- [ ] ');
+                handleInsertCheckbox();
               }}
             />
             <IconButton
@@ -648,8 +786,24 @@ export function EditorScreen() {
               containerColor={theme.colors.secondaryContainer}
               iconColor={theme.colors.onSecondaryContainer}
               onPress={() => {
-                appendToContent('`code`');
+                handleInsertCodeBlock();
               }}
+            />
+            <IconButton
+              icon={renderPaperIcon('attachment')}
+              size={20}
+              mode="contained-tonal"
+              containerColor={theme.colors.secondaryContainer}
+              iconColor={theme.colors.onSecondaryContainer}
+              onPress={handleInsertAttachment}
+            />
+            <IconButton
+              icon={renderPaperIcon('memo-link')}
+              size={20}
+              mode="contained-tonal"
+              containerColor={theme.colors.secondaryContainer}
+              iconColor={theme.colors.onSecondaryContainer}
+              onPress={handleInsertMemoLink}
             />
           </View>
         </Surface>
@@ -707,6 +861,12 @@ const styles = StyleSheet.create({
   },
   customTagInput: {
     flex: 1,
+  },
+  composeActionGroup: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 2,
+    marginRight: 8,
   },
   toolbarLabel: {
     paddingHorizontal: 12,
