@@ -1,5 +1,5 @@
 import React from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import { AppIcon } from './AppIcon';
 
@@ -8,10 +8,12 @@ type MarkdownPreviewProps = {
   maxCharacters?: number;
   maxLines?: number;
   onToggleTask?: (lineIndex: number) => void;
+  serverUrl?: string | null;
 };
 
 type InlineNode =
   | { type: 'text'; value: string }
+  | { type: 'image'; label: string; url: string }
   | { type: 'bold'; value: string }
   | { type: 'italic'; value: string }
   | { type: 'strike'; value: string }
@@ -42,7 +44,7 @@ function truncateMarkdown(content: string, maxCharacters: number, maxLines: numb
 
 function parseInlineMarkdown(text: string): InlineNode[] {
   const pattern =
-    /(!?\[([^\]]+)\]\((https?:\/\/[^\s)]+)\))|(!\[\[([^[\]]+)\]\])|(`([^`]+)`)|(\*\*([^*]+)\*\*)|(==([^=]+)==)|(~~([^~]+)~~)|(\|\|([^|]+)\|\|)|(\^([^^]+)\^)|(~([^~]+)~)|(\*([^*]+)\*)|((https?:\/\/[^\s]+))/g;
+    /(!?\[([^\]]+)\]\(((?:https?:\/\/|\/|\.\.?\/)[^\s)]+)\))|(!\[\[([^[\]]+)\]\])|(`([^`]+)`)|(\*\*([^*]+)\*\*)|(==([^=]+)==)|(~~([^~]+)~~)|(\|\|([^|]+)\|\|)|(\^([^^]+)\^)|(~([^~]+)~)|(\*([^*]+)\*)|((https?:\/\/[^\s]+))/g;
   const nodes: InlineNode[] = [];
   let lastIndex = 0;
 
@@ -59,7 +61,7 @@ function parseInlineMarkdown(text: string): InlineNode[] {
       const url = match[3];
 
       if (fullMatch.startsWith('!')) {
-        nodes.push({ type: 'text', value: `[image: ${label}]` });
+        nodes.push({ type: 'image', label, url });
       } else {
         nodes.push({ type: 'link', label, url });
       }
@@ -95,16 +97,88 @@ function parseInlineMarkdown(text: string): InlineNode[] {
   return nodes.length > 0 ? nodes : [{ type: 'text', value: text }];
 }
 
-function MarkdownInlineText({ text }: { text: string }) {
+function parseTableCells(row: string) {
+  return row
+    .trim()
+    .replace(/^\|/, '')
+    .replace(/\|$/, '')
+    .split('|')
+    .map((cell) => cell.trim());
+}
+
+function isMarkdownTableSeparator(row: string) {
+  const cells = parseTableCells(row);
+
+  return cells.length > 0 && cells.every((cell) => /^:?-{3,}:?$/.test(cell));
+}
+
+function resolveAttachmentUrl(url: string, serverUrl?: string | null) {
+  if (/^https?:\/\//i.test(url)) {
+    return url;
+  }
+
+  if (!serverUrl) {
+    return url;
+  }
+
+  const normalizedBase = serverUrl.replace(/\/$/, '');
+  const normalizedPath = url.startsWith('/') ? url : `/${url}`;
+  return `${normalizedBase}${normalizedPath}`;
+}
+
+function isImageAttachment(url: string) {
+  return /\.(png|jpe?g|gif|webp|bmp|svg|avif)(?:$|[?#])/i.test(url);
+}
+
+function MarkdownInlineText({
+  text,
+  serverUrl,
+}: {
+  text: string;
+  serverUrl?: string | null;
+}) {
   const theme = useTheme();
   const nodes = parseInlineMarkdown(text);
 
   return (
-    <Text style={[styles.inlineBase, { color: theme.colors.onSurface }]}>
+    <View style={styles.inlineFlow}>
       {nodes.map((node, index) => {
+        if (node.type === 'image') {
+          const resolvedUrl = resolveAttachmentUrl(node.url, serverUrl);
+
+          if (isImageAttachment(resolvedUrl)) {
+            return (
+              <View key={index} style={styles.inlineAttachmentBlock}>
+                <Image
+                  source={{ uri: resolvedUrl }}
+                  accessibilityLabel={node.label || 'Attached image'}
+                  style={styles.inlineImage}
+                />
+                {node.label ? (
+                  <Text style={[styles.attachmentCaption, { color: theme.colors.onSurfaceVariant }]}>
+                    {node.label}
+                  </Text>
+                ) : null}
+              </View>
+            );
+          }
+
+          return (
+            <Text
+              key={index}
+              style={[styles.inlineBase, styles.link, { color: theme.colors.primary }]}
+              onPress={() => {
+                void Linking.openURL(resolvedUrl);
+              }}
+            >
+              {node.label ? `Download ${node.label}` : 'Download attachment'}
+            </Text>
+          );
+        }
+
         if (node.type === 'bold') {
           return (
-            <Text key={index} style={styles.bold}>
+            <Text key={index} style={[styles.inlineBase, styles.bold, { color: theme.colors.onSurface }]}>
               {node.value}
             </Text>
           );
@@ -112,7 +186,7 @@ function MarkdownInlineText({ text }: { text: string }) {
 
         if (node.type === 'italic') {
           return (
-            <Text key={index} style={styles.italic}>
+            <Text key={index} style={[styles.inlineBase, styles.italic, { color: theme.colors.onSurface }]}>
               {node.value}
             </Text>
           );
@@ -120,7 +194,7 @@ function MarkdownInlineText({ text }: { text: string }) {
 
         if (node.type === 'strike') {
           return (
-            <Text key={index} style={styles.strike}>
+            <Text key={index} style={[styles.inlineBase, styles.strike, { color: theme.colors.onSurface }]}>
               {node.value}
             </Text>
           );
@@ -131,6 +205,7 @@ function MarkdownInlineText({ text }: { text: string }) {
             <Text
               key={index}
               style={[
+                styles.inlineBase,
                 styles.highlight,
                 {
                   backgroundColor: theme.colors.tertiaryContainer,
@@ -148,6 +223,7 @@ function MarkdownInlineText({ text }: { text: string }) {
             <Text
               key={index}
               style={[
+                styles.inlineBase,
                 styles.spoiler,
                 {
                   backgroundColor: theme.colors.onSurface,
@@ -162,7 +238,7 @@ function MarkdownInlineText({ text }: { text: string }) {
 
         if (node.type === 'subscript') {
           return (
-            <Text key={index} style={styles.subscript}>
+            <Text key={index} style={[styles.inlineBase, styles.subscript, { color: theme.colors.onSurface }]}>
               {node.value}
             </Text>
           );
@@ -170,7 +246,7 @@ function MarkdownInlineText({ text }: { text: string }) {
 
         if (node.type === 'superscript') {
           return (
-            <Text key={index} style={styles.superscript}>
+            <Text key={index} style={[styles.inlineBase, styles.superscript, { color: theme.colors.onSurface }]}>
               {node.value}
             </Text>
           );
@@ -181,6 +257,7 @@ function MarkdownInlineText({ text }: { text: string }) {
             <Text
               key={index}
               style={[
+                styles.inlineBase,
                 styles.inlineCode,
                 {
                   backgroundColor: theme.colors.surfaceVariant,
@@ -197,9 +274,9 @@ function MarkdownInlineText({ text }: { text: string }) {
           return (
             <Text
               key={index}
-              style={[styles.link, { color: theme.colors.primary }]}
+              style={[styles.inlineBase, styles.link, { color: theme.colors.primary }]}
               onPress={() => {
-                void Linking.openURL(node.url);
+                void Linking.openURL(resolveAttachmentUrl(node.url, serverUrl));
               }}
             >
               {node.label}
@@ -212,6 +289,7 @@ function MarkdownInlineText({ text }: { text: string }) {
             <Text
               key={index}
               style={[
+                styles.inlineBase,
                 styles.embed,
                 {
                   backgroundColor: theme.colors.secondaryContainer,
@@ -224,9 +302,13 @@ function MarkdownInlineText({ text }: { text: string }) {
           );
         }
 
-        return <Text key={index}>{node.value}</Text>;
+        return (
+          <Text key={index} style={[styles.inlineBase, { color: theme.colors.onSurface }]}>
+            {node.value}
+          </Text>
+        );
       })}
-    </Text>
+    </View>
   );
 }
 
@@ -235,6 +317,7 @@ export function MarkdownPreview({
   maxCharacters,
   maxLines,
   onToggleTask,
+  serverUrl,
 }: MarkdownPreviewProps) {
   const theme = useTheme();
   const normalizedContent = stripTagsForPreview(content);
@@ -249,6 +332,81 @@ export function MarkdownPreview({
 
   const flushTableBuffer = () => {
     if (tableBuffer.length === 0) {
+      return;
+    }
+
+    const headerCells = parseTableCells(tableBuffer[0]);
+    const separatorIndex = tableBuffer.length > 1 && isMarkdownTableSeparator(tableBuffer[1]) ? 1 : -1;
+    const bodyRows = tableBuffer
+      .slice(separatorIndex === 1 ? 2 : 1)
+      .map(parseTableCells)
+      .filter((row) => row.length > 0);
+
+    if (headerCells.length > 0 && separatorIndex === 1) {
+      renderedRows.push(
+        <View
+          key={`table-${renderedRows.length}`}
+          style={[
+            styles.table,
+            {
+              borderColor: theme.colors.outlineVariant,
+              backgroundColor: theme.colors.surfaceVariant,
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.tableVisualRow,
+              styles.tableHeaderRow,
+              { borderBottomColor: theme.colors.outlineVariant },
+            ]}
+          >
+            {headerCells.map((cell, cellIndex) => (
+              <View
+                key={`header-${cellIndex}`}
+                style={[
+                  styles.tableCell,
+                  cellIndex < headerCells.length - 1 && {
+                    borderRightColor: theme.colors.outlineVariant,
+                    borderRightWidth: 1,
+                  },
+                ]}
+              >
+                <MarkdownInlineText text={cell} serverUrl={serverUrl} />
+              </View>
+            ))}
+          </View>
+
+          {bodyRows.map((row, rowIndex) => (
+            <View
+              key={`body-${rowIndex}`}
+              style={[
+                styles.tableVisualRow,
+                rowIndex < bodyRows.length - 1 && {
+                  borderBottomColor: theme.colors.outlineVariant,
+                  borderBottomWidth: 1,
+                },
+              ]}
+            >
+              {headerCells.map((_, cellIndex) => (
+                <View
+                  key={`cell-${rowIndex}-${cellIndex}`}
+                  style={[
+                    styles.tableCell,
+                    cellIndex < headerCells.length - 1 && {
+                      borderRightColor: theme.colors.outlineVariant,
+                      borderRightWidth: 1,
+                    },
+                  ]}
+                >
+                  <MarkdownInlineText text={row[cellIndex] ?? ''} serverUrl={serverUrl} />
+                </View>
+              ))}
+            </View>
+          ))}
+        </View>
+      );
+      tableBuffer = [];
       return;
     }
 
@@ -355,7 +513,7 @@ export function MarkdownPreview({
             />
           </Pressable>
           <View style={styles.rowContent}>
-            <MarkdownInlineText text={text} />
+            <MarkdownInlineText text={text} serverUrl={serverUrl} />
           </View>
         </View>
       );
@@ -372,7 +530,7 @@ export function MarkdownPreview({
         >
           <Text style={[styles.listLabel, { color: theme.colors.onSurfaceVariant }]}>{number}.</Text>
           <View style={styles.rowContent}>
-            <MarkdownInlineText text={text} />
+            <MarkdownInlineText text={text} serverUrl={serverUrl} />
           </View>
         </View>
       );
@@ -389,7 +547,7 @@ export function MarkdownPreview({
         >
           <Text style={[styles.listLabel, { color: theme.colors.onSurfaceVariant }]}>•</Text>
           <View style={styles.rowContent}>
-            <MarkdownInlineText text={text} />
+            <MarkdownInlineText text={text} serverUrl={serverUrl} />
           </View>
         </View>
       );
@@ -423,7 +581,7 @@ export function MarkdownPreview({
           key={`quote-${index}`}
           style={[styles.quote, { borderLeftColor: theme.colors.outline }]}
         >
-          <MarkdownInlineText text={quoteMatch[1]} />
+          <MarkdownInlineText text={quoteMatch[1]} serverUrl={serverUrl} />
         </View>
       );
       return;
@@ -431,7 +589,7 @@ export function MarkdownPreview({
 
     renderedRows.push(
       <View key={`paragraph-${index}`} style={styles.paragraph}>
-        <MarkdownInlineText text={line} />
+        <MarkdownInlineText text={line} serverUrl={serverUrl} />
       </View>
     );
   });
@@ -448,9 +606,30 @@ const styles = StyleSheet.create({
   paragraph: {
     minHeight: 20,
   },
+  inlineFlow: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
   inlineBase: {
     fontSize: 15,
     lineHeight: 22,
+  },
+  inlineAttachmentBlock: {
+    gap: 6,
+    marginVertical: 4,
+    width: '100%',
+  },
+  inlineImage: {
+    aspectRatio: 16 / 9,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 12,
+    maxHeight: 280,
+    width: '100%',
+  },
+  attachmentCaption: {
+    fontSize: 13,
+    lineHeight: 18,
   },
   bold: {
     fontWeight: '700',
@@ -543,11 +722,24 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     overflow: 'hidden',
   },
+  tableCell: {
+    flex: 1,
+    minWidth: 0,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  tableHeaderRow: {
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderBottomWidth: 1,
+  },
   tableRow: {
     borderBottomWidth: 1,
     fontFamily: 'Courier',
     fontSize: 13,
     paddingHorizontal: 10,
     paddingVertical: 6,
+  },
+  tableVisualRow: {
+    flexDirection: 'row',
   },
 });

@@ -466,6 +466,19 @@ export function EditorScreen() {
     insertSnippet(snippet, 3);
   };
 
+  const handleInsertHeading = (level: 2 | 3 = 2) => {
+    insertLinePrefix(`${'#'.repeat(level)} `);
+  };
+
+  const handleInsertTable = () => {
+    const { start } = selectionRef.current;
+    const needsLeadingNewline = start > 0 && content[start - 1] !== '\n';
+    const snippet =
+      `${needsLeadingNewline ? '\n' : ''}| Column 1 | Column 2 |\n| --- | --- |\n| Value 1 | Value 2 |`;
+    const cursorOffset = (needsLeadingNewline ? 1 : 0) + 2;
+    insertSnippet(snippet, cursorOffset);
+  };
+
   const baseBottomInset = Math.max(insets.bottom, 8);
   const dockBottomOffset = footerHeight + baseBottomInset + keyboardOffset + 8;
   const scrollPaddingBottom = dockHeight + footerHeight + keyboardOffset + baseBottomInset + 32;
@@ -553,6 +566,24 @@ export function EditorScreen() {
               iconColor={theme.colors.onSecondaryContainer}
               onPress={handleInsertCodeBlock}
               accessibilityLabel="Insert code block"
+            />
+            <IconButton
+              icon={renderPaperIcon('pound')}
+              size={20}
+              mode="contained-tonal"
+              containerColor={theme.colors.secondaryContainer}
+              iconColor={theme.colors.onSecondaryContainer}
+              onPress={() => handleInsertHeading(2)}
+              accessibilityLabel="Insert heading"
+            />
+            <IconButton
+              icon={renderPaperIcon('table')}
+              size={20}
+              mode="contained-tonal"
+              containerColor={theme.colors.secondaryContainer}
+              iconColor={theme.colors.onSecondaryContainer}
+              onPress={handleInsertTable}
+              accessibilityLabel="Insert table"
             />
             <IconButton
               icon={renderPaperIcon('attachment')}
@@ -788,6 +819,24 @@ export function EditorScreen() {
               onPress={() => {
                 handleInsertCodeBlock();
               }}
+            />
+            <IconButton
+              icon={renderPaperIcon('pound')}
+              size={20}
+              mode="contained-tonal"
+              containerColor={theme.colors.secondaryContainer}
+              iconColor={theme.colors.onSecondaryContainer}
+              onPress={() => {
+                handleInsertHeading(2);
+              }}
+            />
+            <IconButton
+              icon={renderPaperIcon('table')}
+              size={20}
+              mode="contained-tonal"
+              containerColor={theme.colors.secondaryContainer}
+              iconColor={theme.colors.onSecondaryContainer}
+              onPress={handleInsertTable}
             />
             <IconButton
               icon={renderPaperIcon('attachment')}

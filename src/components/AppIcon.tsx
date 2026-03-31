@@ -25,6 +25,7 @@ type IconName =
   | 'plus'
   | 'server'
   | 'sync'
+  | 'table'
   | 'theme-light-dark'
   | 'wifi'
   | 'wifi-off';
@@ -174,6 +175,14 @@ const WEB_ICON_PATHS: Partial<Record<IconName, React.ReactNode>> = {
       <path d="M4 17v-5h5" />
       <path d="M6.5 9A7 7 0 0 1 18 7" />
       <path d="M17.5 15A7 7 0 0 1 6 17" />
+    </>
+  ),
+  table: (
+    <>
+      <rect x="4" y="5" width="16" height="14" rx="1.5" />
+      <path d="M4 10h16" />
+      <path d="M10 5v14" />
+      <path d="M15 5v14" />
     </>
   ),
   'theme-light-dark': (

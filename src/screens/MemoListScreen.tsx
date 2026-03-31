@@ -19,7 +19,7 @@ import {
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Swipeable } from 'react-native-gesture-handler';
-import { useMemoStore } from '../stores';
+import { useAuthStore, useMemoStore } from '../stores';
 import { useNetworkStore } from '../utils/network';
 import { fullSync, getSyncStatus } from '../sync';
 import { Memo } from '../types';
@@ -71,6 +71,7 @@ export function MemoListScreen() {
     clearError,
     updateMemo,
   } = useMemoStore();
+  const { serverUrl } = useAuthStore();
   const { isConnected } = useNetworkStore();
   const [refreshing, setRefreshing] = React.useState(false);
   const [isSyncing, setIsSyncing] = React.useState(false);
@@ -256,6 +257,7 @@ export function MemoListScreen() {
       onTogglePin={() => togglePin(item.id)}
       onToggleTask={(lineIndex) => void handleToggleTask(item, lineIndex)}
       onTagPress={setFilterTag}
+      serverUrl={serverUrl}
     />
   );
 
@@ -343,6 +345,7 @@ interface MemoCardProps {
   onTogglePin: () => void;
   onToggleTask: (lineIndex: number) => void;
   onTagPress: (tag: string | null) => void;
+  serverUrl: string | null;
 }
 
 interface MemoListEmptyStateProps {
@@ -473,6 +476,7 @@ function MemoCard({
   onTogglePin,
   onToggleTask,
   onTagPress,
+  serverUrl,
 }: MemoCardProps) {
   const theme = useTheme();
   const swipeableRef = React.useRef<Swipeable | null>(null);
@@ -569,7 +573,11 @@ function MemoCard({
             </View>
           </View>
 
-          <MarkdownPreview content={memo.content} onToggleTask={handleToggleTask} />
+          <MarkdownPreview
+            content={memo.content}
+            onToggleTask={handleToggleTask}
+            serverUrl={serverUrl}
+          />
 
           {tags.length > 0 && (
             <View style={styles.tagsContainer}>
